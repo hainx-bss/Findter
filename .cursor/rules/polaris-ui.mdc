@@ -1,0 +1,39 @@
+---
+description: App UI must use Polaris web components only. Do not create new UI components.
+alwaysApply: true
+---
+
+# Polaris-only UI
+
+Build every screen with Shopify Polaris web components (`s-*`). They carry the Shopify admin theme. Do not create a new UI component, custom control, or visual style.
+
+## Use
+
+- Existing Polaris web components: `s-page`, `s-section`, `s-stack`, `s-grid`, `s-button`, `s-text`, `s-text-field`, `s-banner`, `s-badge`, `s-table`, and the other `s-*` elements in App Home.
+- Polaris patterns when the screen matches one: empty state, index table, settings, details, homepage.
+- App Bridge for admin chrome: `shopify.toast.show`, `shopify.loading`, `s-app-nav`, and `data-save-bar` on a native `<form>`.
+- Global `s-*` tags with no import. Use `@shopify/polaris-types` only when a file needs types.
+
+## Do not
+
+- Do not add a new component, wrapper, or design-system primitive.
+- Do not import `@shopify/polaris`, `@shopify/polaris-react`, or `@shopify/polaris-web-components`.
+- Do not restyle Polaris with custom CSS, inline styles, or a second theme.
+- Do not replace a Polaris component with a styled `div`, `span`, or `button`.
+- There is no `s-card` and no `s-form`. Use `s-section` for sections and a native `<form data-save-bar>` for save bars.
+
+```tsx
+<s-page heading="Products">
+  <s-section heading="All products">
+    <s-button variant="primary">Save</s-button>
+  </s-section>
+</s-page>
+```
+
+```tsx
+<div className="card">
+  <button className="btn-primary">Save</button>
+</div>
+```
+
+If no Polaris component covers the case, compose existing `s-*` components. Ask before adding anything outside Polaris.
