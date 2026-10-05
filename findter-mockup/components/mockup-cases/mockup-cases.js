@@ -10,14 +10,6 @@
   menu.setAttribute("aria-label", "Mockup cases");
   document.body.appendChild(menu);
 
-  function indexLabel() {
-    var ms = window.FindterHighlight && typeof window.FindterHighlight.getIndexMs === "function"
-      ? window.FindterHighlight.getIndexMs()
-      : 8000;
-    var seconds = Math.round(ms / 1000);
-    return "Index duration: " + seconds + "s" + (seconds === 5 ? " ✓" : " → 5s");
-  }
-
   function themeApi() {
     var frame = document.querySelector("iframe[name=app-iframe]");
     try {
@@ -28,15 +20,11 @@
   }
 
   function renderMenu() {
-    var isFive = window.FindterHighlight && window.FindterHighlight.getIndexMs && window.FindterHighlight.getIndexMs() === 5000;
     menu.innerHTML =
       '<p class="fdt-mockup-menu__label">Mockup cases</p>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="banner">View banner</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="highlight">View highlight features</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-index">Reset index</button>' +
-      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="index-5s"' +
-      (isFive ? ' aria-current="true"' : "") +
-      ">" + indexLabel() + "</button>" +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-chat">Reset chat</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-support-theme">Reset support theme</button>';
   }
@@ -86,12 +74,6 @@
     if (name === "reset-index") {
       if (window.FindterHighlight && typeof window.FindterHighlight.resetIndex === "function") {
         window.FindterHighlight.resetIndex();
-      }
-      return;
-    }
-    if (name === "index-5s") {
-      if (window.FindterHighlight && typeof window.FindterHighlight.setIndexMs === "function") {
-        window.FindterHighlight.setIndexMs(5000);
       }
       return;
     }
