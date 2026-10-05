@@ -1,0 +1,339 @@
+#fdt-hf {
+  position: fixed;
+  z-index: 1500;
+  box-sizing: border-box;
+  padding: 1.5rem 1rem;
+  overflow: auto;
+  pointer-events: auto;
+  background: #f6f6f7;
+  font-family: var(--p-font-family-sans, Inter, sans-serif);
+  color: #303030;
+}
+
+#fdt-hf[hidden] {
+  display: none;
+}
+
+#fdt-hf .fdt-hf__page {
+  width: min(65rem, 100%);
+  margin: 0 auto;
+}
+
+#fdt-hf .fdt-hf__intro h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  line-height: 2rem;
+  font-weight: 700;
+}
+
+#fdt-hf .fdt-hf__intro p,
+#fdt-hf .fdt-hf__lead {
+  margin: 0;
+  color: #616161;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+#fdt-hf .fdt-hf__banner {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid #e1b878;
+  border-radius: 0.5rem;
+  background: #fff8ee;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+#fdt-hf .fdt-hf__banner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+#fdt-hf .fdt-hf__banner--done {
+  border-color: #b4e0b4;
+  background: #f4fbf4;
+}
+
+#fdt-hf .fdt-hf__card {
+  background: #fff;
+  border: 1px solid #e3e3e3;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px #00000014;
+  overflow: hidden;
+}
+
+#fdt-hf .fdt-hf__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+#fdt-hf .fdt-hf__title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+#fdt-hf .fdt-hf__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+#fdt-hf button {
+  font: inherit;
+  cursor: pointer;
+}
+
+#fdt-hf .fdt-hf__tab {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e3e3e3;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+#fdt-hf .fdt-hf__tab[aria-selected="true"] {
+  background: #303030;
+  border-color: #303030;
+  color: #fff;
+}
+
+#fdt-hf .fdt-hf__split {
+  display: flex;
+}
+
+#fdt-hf .fdt-hf__list {
+  width: 38%;
+  border-right: 1px solid #f1f1f1;
+}
+
+#fdt-hf .fdt-hf__feature {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-bottom: 1px solid #f6f6f6;
+  background: transparent;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+#fdt-hf .fdt-hf__feature[aria-current="true"] {
+  background: #f3f3f3;
+}
+
+#fdt-hf .fdt-hf__stage {
+  width: 62%;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+#fdt-hf .fdt-hf__solo .fdt-hf__stage {
+  width: 100%;
+}
+
+#fdt-hf .fdt-hf__frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #fafafa;
+  color: #616161;
+  padding: 0;
+}
+
+#fdt-hf .fdt-hf__frame--empty {
+  border: 1px dashed #c9cccf;
+  cursor: default;
+}
+
+#fdt-hf .fdt-hf__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+#fdt-hf .fdt-hf__empty strong {
+  color: #303030;
+  font-size: 0.875rem;
+}
+
+#fdt-hf .fdt-hf__empty span {
+  font-size: 0.75rem;
+}
+
+#fdt-hf .fdt-hf__frame img,
+#fdt-hf .fdt-hf__frame video,
+#fdt-hf .fdt-hf__modal-stage img,
+#fdt-hf .fdt-hf__modal-stage video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#fdt-hf .fdt-hf__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+#fdt-hf .fdt-hf__name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+#fdt-hf .fdt-hf__continue {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+#fdt-hf .fdt-hf__continue[hidden],
+#fdt-hf .fdt-hf__advanced[hidden],
+#fdt-hf .fdt-hf__modal[hidden],
+#fdt-hf .fdt-hf__page[hidden] {
+  display: none;
+}
+
+#fdt-hf .fdt-hf__primary {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #303030;
+  color: #fff;
+  font-size: 0.8125rem;
+}
+
+#fdt-hf .fdt-hf__primary:hover {
+  background: #1a1a1a;
+}
+
+#fdt-hf .fdt-hf__advanced {
+  width: min(40rem, 100%);
+  margin: 2rem auto;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #e3e3e3;
+  border-radius: 0.5rem;
+}
+
+#fdt-hf .fdt-hf__advanced h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+#fdt-hf .fdt-hf__focus {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 2px solid #303030;
+  border-radius: 0.5rem;
+  font-weight: 650;
+}
+
+#fdt-hf .fdt-hf__modal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#fdt-hf .fdt-hf__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: #00000080;
+}
+
+#fdt-hf .fdt-hf__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(40rem, calc(100% - 2rem));
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+#fdt-hf .fdt-hf__dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+#fdt-hf .fdt-hf__dialog-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+#fdt-hf .fdt-hf__x {
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #f2f2f2;
+}
+
+#fdt-hf .fdt-hf__modal-stage {
+  min-height: 12rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #fafafa;
+  border-radius: 0.5rem;
+}
+
+#fdt-hf .fdt-hf__note {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  color: #616161;
+  font-size: 0.8125rem;
+}
+
+#fdt-hf button:focus-visible {
+  outline: 0.125rem solid #303030;
+  outline-offset: 0.125rem;
+}
+
+@media (max-width: 47.99rem) {
+  #fdt-hf .fdt-hf__split {
+    flex-direction: column;
+  }
+
+  #fdt-hf .fdt-hf__list,
+  #fdt-hf .fdt-hf__stage {
+    width: 100%;
+  }
+
+  #fdt-hf .fdt-hf__list {
+    display: flex;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid #f1f1f1;
+  }
+
+  #fdt-hf .fdt-hf__feature {
+    width: auto;
+    white-space: nowrap;
+  }
+}
