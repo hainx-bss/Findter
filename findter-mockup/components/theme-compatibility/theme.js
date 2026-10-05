@@ -24,28 +24,38 @@
   var FALLBACK = "Our team has received your request and will get back to you as soon as possible.";
 
   var events = [];
-  window.FindterTheme = { events: events };
-  var root = document.getElementById("fdt-theme");
+  window.FindterTheme = { events: events, resetChat: null, resetSupportTheme: null };
   var choose = document.getElementById("fdt-theme-choose");
   var embed = document.getElementById("fdt-theme-embed");
   var editor = document.getElementById("fdt-theme-editor");
   var search = document.getElementById("fdt-theme-search");
-  var searchInput = search && (search.querySelector("input") || search);
   var listEl = document.getElementById("fdt-theme-list");
   var banner = document.getElementById("fdt-theme-embed-banner");
   var selectedEl = document.getElementById("fdt-theme-selected");
   var enableBtn = document.getElementById("fdt-theme-enable");
-  var chat = document.getElementById("fdt-theme-chat");
+  var chatPanel = document.getElementById("fdt-crisp-panel");
   var chatLog = document.getElementById("fdt-theme-chat-log");
   var chatField = document.getElementById("fdt-theme-chat-input");
-  var chatInput = chatField && (chatField.querySelector("input") || chatField);
-  var welcome = document.getElementById("fdt-welcome");
-  var highlight = document.getElementById("fdt-hf");
-  var frame = document.querySelector("iframe[name=app-iframe]");
+  var crispLauncher = document.getElementById("fdt-crisp-launcher");
+  var crispIcon = document.querySelector("#crisp-chatbox .cc-2gk6o");
   var selected = null;
   var listState = "ready";
   var query = "";
   var loadTimer = null;
+  var finishTimer = null;
+  var openIds = { choose: false, embed: false, editor: false, chat: false };
+
+  function showOverlay(el) {
+    if (!el) return;
+    if (typeof el.showOverlay === "function") el.showOverlay();
+    else el.removeAttribute("hidden");
+  }
+
+  function hideOverlay(el) {
+    if (!el) return;
+    if (typeof el.hideOverlay === "function") el.hideOverlay();
+    else el.setAttribute("hidden", "");
+  }
 
   function fieldValue(el) {
     if (!el) return "";
@@ -65,15 +75,29 @@
     if (!el) return;
     if (disabled) el.setAttribute("disabled", "");
     else el.removeAttribute("disabled");
-    var nested = el.querySelector && el.querySelector("input");
-    if (nested) nested.disabled = !!disabled;
   }
 
   function now() { return new Date().toISOString(); }
   function indexed() { return !!localStorage.getItem(INDEX_KEY); }
   function indexingStatus() { return indexed() ? "completed" : "indexing"; }
+
+  function parentEl(id) {
+    try {
+      return window.parent && window.parent.document && window.parent.document.getElementById(id);
+    } catch (error) {
+      return null;
+    }
+  }
+
   function overlayBusy() {
-    return (welcome && !welcome.hidden) || (highlight && !highlight.hidden && getComputedStyle(highlight).display !== "none");
+    var welcome = parentEl("fdt-welcome");
+    var highlight = parentEl("fdt-hf");
+    try {
+      return (welcome && !welcome.hidden) ||
+        (highlight && !highlight.hidden && window.parent.getComputedStyle(highlight).display !== "none");
+    } catch (error) {
+      return false;
+    }
   }
 
   function loadShop() {
@@ -145,24 +169,24 @@
     };
   }
 
-  function place() {
-    if (!frame || root.hidden) return;
-    var rect = frame.getBoundingClientRect();
-    root.style.top = rect.top + "px";
-    root.style.left = rect.left + "px";
-    root.style.width = rect.width + "px";
-    root.style.height = rect.height + "px";
-  }
-
   function fourDigits(text) {
+    // Accept first standalone 4-digit sequence (e.g. "3213", "code 3213").
+    // Reject 3 digits, 5+ digit runs ("321", "32135").
     var found = String(text || "").match(/(?:^|[^\d])(\d{4})(?!\d)/);
     return found ? found[1] : "";
   }
 
+  function esc(value) {
+    return String(value || "").replace(/[&<>"']/g, function (char) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
+    });
+  }
+
   function renderChat() {
+    if (!chatLog) return;
     var state = loadChat();
     chatLog.innerHTML = state.messages.map(function (msg) {
-      return '<div class="fdt-theme__msg fdt-theme__msg--' + msg.from + '">' + esc(msg.text) + "</div>";
+      return '<div class="fdt-crisp-msg fdt-crisp-msg--' + msg.from + '">' + esc(msg.text) + "</div>";
     }).join("");
     chatLog.scrollTop = chatLog.scrollHeight;
   }
@@ -174,10 +198,56 @@
     renderChat();
   }
 
-  function esc(value) {
-    return String(value || "").replace(/[&<>"']/g, function (char) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
-    });
+  function scheduleFinish(themeId) {
+    if (finishTimer) clearTimeout(finishTimer);
+    finishTimer = setTimeout(function () {
+      finishTimer = null;
+      finishSupport(themeId);
+    }, 10000);
+  }
+
+  function emptyChat() {
+    return { messages: [], asked: false, code: false, misses: 0, pending: null };
+  }
+
+  function seedShop() {
+    return SEED.map(function (theme) { return Object.assign({ shop_status: "" }, theme); });
+  }
+
+  function resetChat() {
+    if (finishTimer) {
+      clearTimeout(finishTimer);
+      finishTimer = null;
+    }
+    saveChat(emptyChat());
+    setFieldValue(chatField, "");
+    renderChat();
+    setCrispOpen(false);
+  }
+
+  function resetSupportTheme() {
+    if (finishTimer) {
+      clearTimeout(finishTimer);
+      finishTimer = null;
+    }
+    saveShop(seedShop());
+    saveEmbed({});
+    selected = null;
+    var issue = document.getElementById("fdt-theme-issue");
+    if (issue) issue.remove();
+    var button = document.querySelector("s-button[commandfor=modal-select-theme]");
+    if (button) button.textContent = "Choose Your Theme";
+    if (openIds.choose) renderList();
+    else closeModals();
+  }
+
+  function closeModals() {
+    openIds.choose = false;
+    openIds.embed = false;
+    openIds.editor = false;
+    hideOverlay(choose);
+    hideOverlay(embed);
+    hideOverlay(editor);
   }
 
   function themes() {
@@ -199,29 +269,64 @@
     }
     setDisabled(search, false);
     if (listState === "error") {
-      listEl.innerHTML = '<p class="fdt-theme__note">Couldn\'t load themes. Try again.</p>';
+      listEl.innerHTML = '<s-banner tone="critical" heading="Couldn\'t load themes">Try again.</s-banner>';
       return;
     }
     var rows = visibleThemes();
     if (!themes().length) {
-      listEl.innerHTML = '<p class="fdt-theme__note">This store has no themes yet.</p>';
+      listEl.innerHTML = '<s-text color="subdued">This store has no themes yet.</s-text>';
       return;
     }
     if (!rows.length) {
-      listEl.innerHTML = '<p class="fdt-theme__note">No themes found.</p>';
+      listEl.innerHTML = '<s-text color="subdued">No themes found.</s-text>';
       return;
     }
-    listEl.innerHTML = rows.map(function (theme) {
-      var status = compatibility(theme);
-      var live = theme.live ? '<s-badge tone="info">Live</s-badge>' : "";
-      var action;
-      if (status === "compatible") action = '<s-badge tone="success">Compatible</s-badge>';
-      else if (status === "working_on_it") action = '<s-badge tone="warning"><s-spinner accessibilityLabel="Working on it" size="base"></s-spinner> Working on it</s-badge>';
-      else action = '<s-button type="button" variant="secondary" data-support="' + esc(theme.id) + '">Get support</s-button>';
-      var disabled = status === "working_on_it" ? ' aria-disabled="true"' : "";
-      var role = status === "compatible" ? ' role="button" tabindex="0"' : "";
-      return '<div class="fdt-theme__row" data-theme="' + esc(theme.id) + '"' + disabled + role + '><span class="fdt-theme__meta"><span class="fdt-theme__name">' + esc(theme.display_name) + "</span>" + live + '</span><span class="fdt-theme__compat">' + action + "</span></div>";
-    }).join("");
+    listEl.innerHTML =
+      '<s-table>' +
+      '<s-table-header-row>' +
+      '<s-table-header listSlot="primary">Theme</s-table-header>' +
+      '<s-table-header>Status</s-table-header>' +
+      '</s-table-header-row>' +
+      '<s-table-body>' +
+      rows.map(function (theme) {
+        var status = compatibility(theme);
+        var live = theme.live ? ' <s-badge tone="info">Live</s-badge>' : "";
+        var action;
+        if (status === "compatible") action = '<s-badge tone="success">Compatible</s-badge>';
+        else if (status === "working_on_it") {
+          action = '<s-stack direction="inline" gap="small" alignItems="center"><s-spinner accessibilityLabel="Working on it" size="base"></s-spinner><s-badge tone="warning">Working on it</s-badge></s-stack>';
+        } else {
+          action = '<s-button type="button" variant="secondary" data-support="' + esc(theme.id) + '">Get support</s-button>';
+        }
+        var clickable = status === "compatible"
+          ? ' data-theme="' + esc(theme.id) + '" role="button" tabindex="0"'
+          : status === "working_on_it"
+            ? ' data-theme="' + esc(theme.id) + '" aria-disabled="true"'
+            : ' data-theme="' + esc(theme.id) + '"';
+        return (
+          '<s-table-row' + clickable + '>' +
+          '<s-table-cell><s-stack direction="inline" gap="small" alignItems="center"><s-text type="strong">' + esc(theme.display_name) + "</s-text>" + live + "</s-stack></s-table-cell>" +
+          "<s-table-cell>" + action + "</s-table-cell>" +
+          "</s-table-row>"
+        );
+      }).join("") +
+      "</s-table-body></s-table>";
+  }
+
+  function setCrispOpen(open) {
+    openIds.chat = !!open;
+    if (chatPanel) chatPanel.hidden = !open;
+    if (crispIcon) crispIcon.setAttribute("data-id", open ? "chat_opened" : "chat_closed");
+    if (crispLauncher) {
+      crispLauncher.setAttribute("aria-label", open ? "Close chat" : "Open chat");
+      crispLauncher.setAttribute("data-pop", open ? "maximized:close" : "minimized:open");
+      crispLauncher.setAttribute("data-maximized", open ? "true" : "false");
+    }
+  }
+
+  function closeAll() {
+    closeModals();
+    setCrispOpen(false);
   }
 
   function openChoose() {
@@ -229,14 +334,12 @@
     var mode = new URLSearchParams(location.search).get("themes");
     listState = mode === "empty" ? "ready" : mode === "error" ? "error" : "loading";
     if (mode === "empty") saveShop([]);
-    root.hidden = false;
-    choose.hidden = false;
-    embed.hidden = true;
-    editor.hidden = true;
+    closeAll();
+    openIds.choose = true;
     query = "";
-    setFieldValue(searchInput, "");
+    setFieldValue(search, "");
     renderList();
-    place();
+    showOverlay(choose);
     track("theme_selection_modal_viewed", { source: "homepage" });
     if (listState === "loading") {
       if (loadTimer) clearTimeout(loadTimer);
@@ -247,16 +350,8 @@
     }
   }
 
-  function closeAll() {
-    root.hidden = true;
-    choose.hidden = true;
-    embed.hidden = true;
-    editor.hidden = true;
-    chat.hidden = true;
-  }
-
   function refreshEmbed() {
-    if (!selected || embed.hidden) return;
+    if (!selected || !openIds.embed) return;
     var done = indexed();
     banner.innerHTML = done
       ? '<s-banner heading="Data indexing is complete!" tone="success">You can now proceed to enable the app in your Theme Editor.</s-banner>'
@@ -266,12 +361,24 @@
 
   function openEmbed(theme) {
     selected = theme;
-    choose.hidden = true;
-    editor.hidden = true;
-    embed.hidden = false;
+    hideOverlay(choose);
+    hideOverlay(editor);
+    openIds.choose = false;
+    openIds.editor = false;
+    openIds.embed = true;
     selectedEl.textContent = theme.display_name;
+    showOverlay(embed);
     refreshEmbed();
     track("enable_embed_modal_viewed", Object.assign({ source: "homepage" }, themeFields(theme)));
+  }
+
+  function openChat() {
+    closeModals();
+    setCrispOpen(true);
+    renderChat();
+    if (chatField && typeof chatField.focus === "function") {
+      setTimeout(function () { chatField.focus(); }, 50);
+    }
   }
 
   function requestSupport(theme) {
@@ -301,23 +408,29 @@
       source: "crisp",
       request_count_for_theme: "1"
     }, themeFields(theme)));
-    choose.hidden = true;
-    embed.hidden = true;
-    editor.hidden = true;
-    root.hidden = false;
-    chat.hidden = false;
-    place();
-    renderList();
+
     var chatState = loadChat();
     chatState.pending = theme.id;
     saveChat(chatState);
+
+    closeModals();
+    openChat();
     pushChat("user", "Hi! I'd love to use Findter with the " + theme.schema_theme + " theme, could you help make it compatible?");
     pushChat("agent", "We've received your request to support the " + theme.schema_theme + " theme.");
-    if (!chatState.asked && !chatState.code) {
-      chatState = loadChat();
-      chatState.asked = true;
-      saveChat(chatState);
-      pushChat("agent", COLLAB_ASK);
+
+    chatState = loadChat();
+    if (!chatState.code) {
+      // Ask collaborator code once per chat, only if never received a code.
+      if (!chatState.asked) {
+        chatState.asked = true;
+        chatState.misses = 0;
+        saveChat(chatState);
+        pushChat("agent", COLLAB_ASK);
+      }
+      // Wait for merchant to send a 4-digit collaborator code (LOG-04).
+    } else {
+      // Code already on file — skip COLLAB_ASK; mock system finish after 10s.
+      scheduleFinish(theme.id);
     }
   }
 
@@ -343,23 +456,27 @@
       if (item.id === original.id || item.id === duplicateId) item.shop_status = "compatible";
     });
     saveShop(shop);
-    [original].concat(shop.filter(function (item) { return item.id === duplicateId; })).forEach(function (item) {
+    var finished = [original].concat(shop.filter(function (item) { return item.id === duplicateId; }));
+    finished.forEach(function (item) {
       track("theme_compatibility_status_changed", Object.assign({
         source: "system",
         previous_status: "working_on_it",
         current_status: "compatible"
       }, themeFields(item)));
-      pushChat("agent", "Good news! " + item.display_name + " is now compatible with Findter, you're all set to select it.");
     });
-    if (!choose.hidden) renderList();
+    pushChat("agent", "Good news! " + original.display_name + " is now compatible with Findter, you're all set to select it.");
   }
 
   function handleChat(text) {
     var value = String(text || "").trim();
     if (!value) return;
     pushChat("user", value);
-    var code = fourDigits(value);
     var state = loadChat();
+
+    // Collab-code response flow only while waiting for a code (LOG-04).
+    if (state.code || !state.asked || !state.pending) return;
+
+    var code = fourDigits(value);
     if (code) {
       state.code = true;
       state.misses = 0;
@@ -367,18 +484,17 @@
       var pending = themes().filter(function (theme) { return theme.id === state.pending; })[0];
       track("theme_compatibility_collab_code_submitted", Object.assign({ source: "crisp" }, pending ? themeFields(pending) : {}));
       pushChat("agent", THANKS);
-      setTimeout(function () { finishSupport(state.pending); }, 2500);
+      scheduleFinish(state.pending);
       return;
     }
+
     state.misses += 1;
     saveChat(state);
     pushChat("agent", state.misses >= 3 ? FALLBACK : CHECK_CODE);
   }
 
   function markOnboardingDone(theme) {
-    if (!frame || !frame.contentDocument) return;
-    var doc = frame.contentDocument;
-    var button = doc.querySelector("s-button[commandfor=modal-select-theme]");
+    var button = document.querySelector("s-button[commandfor=modal-select-theme]");
     if (button) button.textContent = theme.display_name;
     var embedState = loadEmbed();
     embedState.enabled = true;
@@ -387,30 +503,29 @@
   }
 
   function showIssueBanner(theme) {
-    if (!frame || !frame.contentDocument) return;
-    var doc = frame.contentDocument;
-    if (doc.getElementById("fdt-theme-issue")) return;
-    var main = doc.querySelector("main") || doc.body;
-    var bar = doc.createElement("div");
+    if (document.getElementById("fdt-theme-issue")) return;
+    var main = document.querySelector("main") || document.body;
+    var bar = document.createElement("div");
     bar.id = "fdt-theme-issue";
-    bar.style.cssText = "margin:0 0 1rem;padding:1rem;border:1px solid #e1b878;border-radius:8px;background:#fff8ee;font-family:Inter,sans-serif;color:#303030";
-    bar.innerHTML = '<strong style="display:block;margin-bottom:4px">This theme version needs help</strong><span>Findter is on, but this version of your theme isn\'t working with it yet. Contact support and we\'ll take a look.</span> <button type="button" id="fdt-theme-contact" style="margin-top:8px;min-height:36px;padding:8px 12px;border:1px solid #c9cccf;border-radius:8px;background:#fff;cursor:pointer">Contact support</button>';
+    bar.innerHTML =
+      '<s-banner heading="This theme version needs help" tone="warning">' +
+      "Findter is on, but this version of your theme isn't working with it yet. Contact support and we'll take a look. " +
+      '<s-button id="fdt-theme-contact" variant="secondary">Contact support</s-button>' +
+      "</s-banner>";
     main.insertBefore(bar, main.firstChild);
     bar.querySelector("#fdt-theme-contact").addEventListener("click", function () {
-      root.hidden = false;
-      choose.hidden = true;
-      embed.hidden = true;
-      editor.hidden = true;
-      chat.hidden = false;
-      place();
+      closeAll();
+      openChat();
       pushChat("user", "Hi! I enabled Findter on " + theme.display_name + " (" + theme.schema_theme + " " + theme.theme_version + ") and it isn't working.");
     });
   }
 
   function openEditor(theme, issue) {
-    embed.hidden = true;
-    choose.hidden = true;
-    editor.hidden = false;
+    hideOverlay(embed);
+    hideOverlay(choose);
+    openIds.embed = false;
+    openIds.choose = false;
+    openIds.editor = true;
     document.getElementById("fdt-theme-editor-copy").textContent = issue
       ? theme.display_name + " is not compatible with Findter yet."
       : "Enable Search & filter core on " + theme.display_name + ", then save the theme.";
@@ -420,18 +535,22 @@
         source: "theme_editor",
         theme_status: "make_compatible"
       }, themeFields(theme)));
-      actions.innerHTML = '<s-button type="button" variant="secondary" data-editor="contact">Contact us</s-button><s-button type="button" variant="secondary" data-editor="chat">Live chat</s-button><s-button type="button" variant="primary" data-editor="home">Go back home</s-button>';
+      actions.innerHTML =
+        '<s-stack direction="inline" gap="base">' +
+        '<s-button type="button" variant="secondary" data-editor="contact">Contact us</s-button>' +
+        '<s-button type="button" variant="secondary" data-editor="chat">Live chat</s-button>' +
+        '<s-button type="button" variant="primary" data-editor="home">Go back home</s-button>' +
+        "</s-stack>";
     } else {
-      actions.innerHTML = '<s-button type="button" variant="primary" data-editor="save">Save</s-button>';
+      actions.innerHTML = '<s-button type="button" variant="primary" data-editor="save" slot="primary-action">Save</s-button>';
     }
+    showOverlay(editor);
   }
 
-  function bindFrame() {
-    if (!frame || !frame.contentDocument) return;
-    var doc = frame.contentDocument;
-    if (!doc.documentElement.dataset.fdtThemeBound) {
-      doc.documentElement.dataset.fdtThemeBound = "1";
-      doc.addEventListener("click", function (event) {
+  function bindTriggers() {
+    if (!document.documentElement.dataset.fdtThemeBound) {
+      document.documentElement.dataset.fdtThemeBound = "1";
+      document.addEventListener("click", function (event) {
         var host = event.target.closest && event.target.closest("s-button[commandfor=modal-select-theme]");
         if (!host) return;
         event.preventDefault();
@@ -472,17 +591,20 @@
     event.preventDefault();
     row.click();
   });
-  (searchInput || search).addEventListener("input", function () {
-    query = fieldValue(searchInput || search);
+  search.addEventListener("input", function () {
+    query = fieldValue(search);
     renderList();
   });
   document.getElementById("fdt-theme-close").addEventListener("click", function () {
     closeAll();
   });
   document.getElementById("fdt-theme-back").addEventListener("click", function () {
-    embed.hidden = true;
-    editor.hidden = true;
-    choose.hidden = false;
+    hideOverlay(embed);
+    hideOverlay(editor);
+    openIds.embed = false;
+    openIds.editor = false;
+    openIds.choose = true;
+    showOverlay(choose);
   });
   enableBtn.addEventListener("click", function () {
     if (enableBtn.hasAttribute("disabled") || !selected) return;
@@ -513,31 +635,53 @@
       closeAll();
       return;
     }
-    chat.hidden = false;
+    openChat();
     if (action === "contact" || action === "chat") {
       pushChat("user", "Hi! I'd love to use Findter with the " + selected.schema_theme + " theme, could you help make it compatible?");
     }
   });
-  document.getElementById("fdt-theme-chat-close").addEventListener("click", function () {
-    chat.hidden = true;
-    if (choose.hidden && embed.hidden && editor.hidden) root.hidden = true;
-  });
-  document.getElementById("fdt-theme-chat-form").addEventListener("submit", function (event) {
-    event.preventDefault();
-    var value = fieldValue(chatInput);
-    setFieldValue(chatInput, "");
-    handleChat(value);
-  });
-  root.addEventListener("click", function (event) {
-    if (event.target === root.querySelector(".fdt-theme__host")) closeAll();
-  });
-  window.addEventListener("resize", place);
-  if (frame) frame.addEventListener("load", bindFrame);
-  if (highlight) new MutationObserver(bindFrame).observe(highlight, { attributes: true, attributeFilter: ["hidden"] });
+  var chatClose = document.getElementById("fdt-theme-chat-close");
+  if (chatClose) {
+    chatClose.addEventListener("click", function () {
+      setCrispOpen(false);
+    });
+  }
+  var chatForm = document.getElementById("fdt-theme-chat-form");
+  if (chatForm) {
+    chatForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var value = fieldValue(chatField);
+      setFieldValue(chatField, "");
+      handleChat(value);
+    });
+  }
+  var chatSend = chatForm && chatForm.querySelector(".fdt-crisp-panel__send");
+  if (chatSend) {
+    chatSend.addEventListener("click", function (event) {
+      event.preventDefault();
+      var value = fieldValue(chatField);
+      setFieldValue(chatField, "");
+      handleChat(value);
+    });
+  }
+  if (crispLauncher) {
+    crispLauncher.addEventListener("click", function () {
+      if (openIds.chat) setCrispOpen(false);
+      else openChat();
+    });
+    crispLauncher.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      crispLauncher.click();
+    });
+  }
+  window.FindterTheme.resetChat = resetChat;
+  window.FindterTheme.resetSupportTheme = resetSupportTheme;
+
   setInterval(function () {
     refreshEmbed();
-    bindFrame();
+    bindTriggers();
   }, 1000);
-  setTimeout(bindFrame, 400);
+  setTimeout(bindTriggers, 400);
   renderChat();
 })();

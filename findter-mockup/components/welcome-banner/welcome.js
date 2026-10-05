@@ -125,9 +125,30 @@
     root.hidden = true;
   }
 
+  function hideBanner() {
+    closed = true;
+    stopAuto();
+    root.hidden = true;
+  }
+
+  function showBanner() {
+    closed = false;
+    current = 0;
+    shownAt = Date.now();
+    render();
+    place();
+    root.hidden = false;
+    track("welcome_modal_shown", { source: "mockup_menu" });
+    continueBtn.focus();
+    startAuto();
+  }
+
   function seen() {
     try { return localStorage.getItem(SEEN_KEY) === "1"; } catch (error) { return false; }
   }
+
+  window.FindterWelcome.show = showBanner;
+  window.FindterWelcome.hide = hideBanner;
 
   root.addEventListener("click", function (event) {
     var dismissor = event.target.closest("[data-dismiss]");

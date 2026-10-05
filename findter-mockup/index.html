@@ -18,7 +18,7 @@
 <link rel=stylesheet href="admin/styles/snapshot.css">
 <link rel=stylesheet href="components/welcome-banner/welcome.css">
 <link rel=stylesheet href="components/highlight-features/highlight.css">
-<link rel=stylesheet href="components/theme-compatibility/theme.css">
+<link rel=stylesheet href="components/mockup-cases/mockup-cases.css">
 </head>
 <body style=background-color:var(--admin-next-ios-status-bar-color);color:var(--p-color-text) data-dux-initialized=1>
 <div id=app>
@@ -1081,7 +1081,7 @@
 <div>
 <div class=_iconOverride_nrtgd_13>
 <div class="Polaris-ActionMenu-SecondaryAction Polaris-ActionMenu-SecondaryAction--adminNext">
-<button class="Polaris-Button Polaris-Button--pressable Polaris-Button--variantSecondary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--iconOnly Polaris-Button--adminNext Polaris-Button--adminNextLight" aria-label="More actions" type=button aria-expanded=false tabindex=0 aria-controls=:rj: aria-owns=:rj: data-state=closed>
+<button id=fdt-mockup-menu-btn class="Polaris-Button Polaris-Button--pressable Polaris-Button--variantSecondary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--iconOnly Polaris-Button--adminNext Polaris-Button--adminNextLight" aria-label="More actions" type=button aria-expanded=false aria-haspopup=menu tabindex=0 data-state=closed>
 <span class=Polaris-Button__Icon>
 <s-internal-icon type=menu-horizontal tone=legacy-inherit>
 <template shadowrootmode=open>
@@ -1112,7 +1112,7 @@
 <div class=_Dialog_inaw2_51 data-setup-guide-sidebar-aware=true>
 <div>
 <div class=_WebContainer_1d40l_2 style="display:flex;flex-direction:column;inset:0px;padding-bottom:calc(var(--pc-frame-global-ribbon-height,0) + var(--pg-bottom-bar-height,0))">
-<iframe class=_WebFrame_1d40l_11 allow="clipboard-read; clipboard-write; local-network-access;" name=app-iframe title="Findter Filter &amp; Search" context=main src="app/home.html" style="position:relative;border-width:medium;border-style:none;border-color:currentcolor;border-image:none;width:100%;flex:1 1 0%;display:flex" sandbox="allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>
+<iframe class=_WebFrame_1d40l_11 allow="clipboard-read; clipboard-write; local-network-access;" name=app-iframe title="Findter Filter &amp; Search" context=main src="app/home.html" style="position:relative;border-width:medium;border-style:none;border-color:currentcolor;border-image:none;width:100%;flex:1 1 0%;display:flex" sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>
 </div>
 </div>
 </div>
@@ -2313,79 +2313,7 @@
 </div>
 </div>
 </div>
-<div id=fdt-theme class=fdt-theme hidden>
-<div class=fdt-theme__host>
-<s-modal id=fdt-theme-choose heading="Choose your theme" size=base>
-<s-stack gap=base>
-<s-search-field id=fdt-theme-search label="Search themes" labelAccessibilityVisibility=exclusive placeholder="Search themes" name=themeSearch>
-<input class=fdt-theme__field type=search placeholder="Search themes" autocomplete=off>
-</s-search-field>
-<div id=fdt-theme-list class=fdt-theme__list></div>
-</s-stack>
-<s-button id=fdt-theme-close slot=secondary-actions variant=secondary>Close</s-button>
-</s-modal>
-
-<s-modal id=fdt-theme-embed heading="Enable app embed" size=base hidden>
-<s-stack gap=large>
-<s-stack direction=inline gap=base alignItems=start>
-<s-box class=fdt-theme__step-icon padding=small borderRadius=base background=subdued>
-<s-icon type=apps tone=info></s-icon>
-</s-box>
-<s-stack gap=small-200>
-<s-heading>Step 2: Enable App Embed in Theme Editor</s-heading>
-<s-paragraph>Selected theme: <s-text id=fdt-theme-selected type=strong></s-text></s-paragraph>
-</s-stack>
-</s-stack>
-<s-box padding=base background=subdued border=base borderRadius=base>
-<s-stack direction=inline gap=small alignItems=center justifyContent=space-between>
-<s-stack direction=inline gap=small-200 alignItems=center>
-<s-box class="fdt-theme__dot fdt-theme__dot--done" padding=small-100 borderRadius=base background=strong><s-text type=strong>1</s-text></s-box>
-<s-text>Theme Editor</s-text>
-</s-stack>
-<s-icon type=chevron-right color=subdued></s-icon>
-<s-stack direction=inline gap=small-200 alignItems=center>
-<s-box class="fdt-theme__dot fdt-theme__dot--done" padding=small-100 borderRadius=base background=strong><s-text type=strong>2</s-text></s-box>
-<s-text>App Embeds</s-text>
-</s-stack>
-<s-icon type=chevron-right color=subdued></s-icon>
-<s-stack direction=inline gap=small-200 alignItems=center>
-<s-box class="fdt-theme__dot fdt-theme__dot--done" padding=small-100 borderRadius=base background=strong><s-text type=strong>3</s-text></s-box>
-<s-text>Enable App</s-text>
-</s-stack>
-<s-icon type=chevron-right color=subdued></s-icon>
-<s-stack direction=inline gap=small-200 alignItems=center>
-<s-box class="fdt-theme__dot fdt-theme__dot--save" padding=small-100 borderRadius=base background=subdued><s-text type=strong>4</s-text></s-box>
-<s-text>Save</s-text>
-</s-stack>
-</s-stack>
-</s-box>
-<div id=fdt-theme-embed-banner></div>
-</s-stack>
-<s-button id=fdt-theme-back slot=secondary-actions variant=secondary>Back</s-button>
-<s-button id=fdt-theme-enable slot=primary-action variant=primary icon=external>Enable App In Theme Editor</s-button>
-</s-modal>
-
-<s-modal id=fdt-theme-editor heading="Theme editor" size=small-100 hidden>
-<s-paragraph id=fdt-theme-editor-copy></s-paragraph>
-<div id=fdt-theme-editor-actions class=fdt-theme__footer></div>
-</s-modal>
-</div>
-
-<div id=fdt-theme-chat class=fdt-theme__chat hidden>
-<div class=fdt-theme__chat-head>
-<s-text>Support Chat</s-text>
-<s-button id=fdt-theme-chat-close variant=tertiary accessibilityLabel=Close>✕</s-button>
-</div>
-<div id=fdt-theme-chat-log class=fdt-theme__chat-log></div>
-<form id=fdt-theme-chat-form class=fdt-theme__chat-form>
-<s-text-field id=fdt-theme-chat-input label="Message" labelAccessibilityVisibility=exclusive placeholder="Type a message" name=chatMessage>
-<input class=fdt-theme__field type=text placeholder="Type a message" autocomplete=off>
-</s-text-field>
-<s-button type=submit variant=primary>Send</s-button>
-</form>
-</div>
-</div>
-<script src="components/welcome-banner/welcome.js"></script>
-<script src="components/highlight-features/highlight.js"></script>
-<script src="components/theme-compatibility/theme.js"></script>
+<script src="components/welcome-banner/welcome.js?v=2"></script>
+<script src="components/highlight-features/highlight.js?v=2"></script>
+<script src="components/mockup-cases/mockup-cases.js?v=3"></script>
 </body></html>
