@@ -250,7 +250,6 @@
   stage.addEventListener("focusout", function () { paused = false; startAuto(); });
   window.addEventListener("resize", place);
 
-  if (seen() && !force) return;
   try {
     displayCount = Number(localStorage.getItem(COUNT_KEY) || "0") + 1;
     localStorage.setItem(COUNT_KEY, String(displayCount));
