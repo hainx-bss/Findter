@@ -54,7 +54,7 @@ IFRAME = (
     'src="app/home.html" '
     'style="position:relative;border-width:medium;border-style:none;'
     'border-color:currentcolor;border-image:none;width:100%;flex:1 1 0%;display:flex" '
-    'sandbox="allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>'
+    'sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>'
 )
 
 
@@ -178,6 +178,7 @@ def split(monolith: str) -> None:
     links += (
         '\n<link rel=stylesheet href="components/welcome-banner/welcome.css">'
         '\n<link rel=stylesheet href="components/highlight-features/highlight.css">'
+        '\n<link rel=stylesheet href="components/mockup-cases/mockup-cases.css">'
     )
     head = head.replace(
         "style-src 'unsafe-inline'",
@@ -327,8 +328,9 @@ def build() -> None:
         + after
         + welcome
         + highlight
-        + '<script src="components/welcome-banner/welcome.js"></script>\n'
-        + '<script src="components/highlight-features/highlight.js"></script>\n'
+        + '<script src="components/welcome-banner/welcome.js?v=2"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=2"></script>\n'
+        + '<script src="components/mockup-cases/mockup-cases.js?v=3"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)
@@ -340,7 +342,14 @@ def build() -> None:
     chunks = []
     for name in APP_PARTS:
         chunks.append((ROOT / "app" / name).read_text(encoding="utf-8"))
+    theme = (ROOT / "components" / "theme-compatibility" / "theme.html").read_text(encoding="utf-8")
     home = "\n".join(chunks).replace("<!--APP_STYLES-->", "\n".join(styles), 1)
+    home = (
+        home.rstrip()
+        + "\n"
+        + theme
+        + '\n<script src="../components/theme-compatibility/theme.js?v=4"></script>\n'
+    )
     write(ROOT / "app" / "home.html", home)
 
     write(

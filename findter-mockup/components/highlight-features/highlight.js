@@ -1,7 +1,12 @@
 (function () {
   var SHOP = "khgym6-d1.myshopify.com";
   var SLIDE_MS = 7000;
-  var INDEX_MS = 8000;
+  var DEFAULT_INDEX_MS = 8000;
+  var INDEX_MS_KEY = "findter.highlight.indexMs";
+  var INDEX_MS = (function () {
+    var saved = Number(localStorage.getItem(INDEX_MS_KEY) || "");
+    return saved > 0 ? saved : DEFAULT_INDEX_MS;
+  })();
   var HOUR_MS = 3600 * 1000;
   var KEY = {
     items: "findter.highlight.items.v4",
@@ -528,15 +533,58 @@
   if (welcome) new MutationObserver(function () { present(true); }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
   if (frame) frame.addEventListener("load", function () { if (mode === "home") mountHomeCard(); });
 
-  if (!indexed() && !indexTimer) {
+  function startIndexTimer() {
+    if (indexTimer) clearTimeout(indexTimer);
+    indexTimer = null;
+    if (indexed()) return;
     indexTimer = setTimeout(function () {
       localStorage.setItem(KEY.indexCompletedAt, String(Date.now()));
+      indexTimer = null;
       if (mode === "highlight") {
         renderBanner();
-        pageWidget.refresh();
+        if (pageWidget) pageWidget.refresh();
       }
       if (mode === "home" && homeWidget) homeWidget.refresh();
     }, INDEX_MS);
   }
+
+  function resetIndex() {
+    localStorage.removeItem(KEY.indexCompletedAt);
+    if (mode === "highlight") {
+      renderBanner();
+      if (pageWidget) pageWidget.refresh();
+    }
+    if (mode === "home" && homeWidget) homeWidget.refresh();
+    startIndexTimer();
+  }
+
+  function setIndexMs(ms) {
+    var next = Number(ms);
+    if (!(next > 0)) return INDEX_MS;
+    INDEX_MS = next;
+    localStorage.setItem(INDEX_MS_KEY, String(INDEX_MS));
+    resetIndex();
+    return INDEX_MS;
+  }
+
+  function forceShowHighlight() {
+    localStorage.removeItem(KEY.continueClicked);
+    localStorage.removeItem(KEY.viewFeature);
+    localStorage.removeItem(KEY.expired);
+    sessionStorage.removeItem(SESSION_HIDE);
+    if (welcome && !welcome.hidden && window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
+      window.FindterWelcome.hide();
+    } else if (welcome) {
+      welcome.hidden = true;
+    }
+    showHighlight(true);
+  }
+
+  window.FindterHighlight.show = forceShowHighlight;
+  window.FindterHighlight.resetIndex = resetIndex;
+  window.FindterHighlight.setIndexMs = setIndexMs;
+  window.FindterHighlight.getIndexMs = function () { return INDEX_MS; };
+
+  if (!indexed()) startIndexTimer();
   present(true);
 })();
