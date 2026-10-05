@@ -1,0 +1,72 @@
+<div id=fdt-theme class=fdt-theme hidden>
+<div class=fdt-theme__host>
+<s-modal id=fdt-theme-choose heading="Choose your theme" size=base>
+<s-stack gap=base>
+<s-search-field id=fdt-theme-search label="Search themes" labelAccessibilityVisibility=exclusive placeholder="Search themes" name=themeSearch>
+<input class=fdt-theme__field type=search placeholder="Search themes" autocomplete=off>
+</s-search-field>
+<div id=fdt-theme-list class=fdt-theme__list></div>
+</s-stack>
+<s-button id=fdt-theme-close slot=secondary-actions variant=secondary>Close</s-button>
+</s-modal>
+
+<s-modal id=fdt-theme-embed heading="Enable app embed" size=base hidden>
+<s-stack gap=large>
+<s-stack direction=inline gap=base alignItems=start>
+<s-box class=fdt-theme__step-icon padding=small borderRadius=base background=subdued>
+<s-icon type=apps tone=info></s-icon>
+</s-box>
+<s-stack gap=small-200>
+<s-heading>Step 2: Enable App Embed in Theme Editor</s-heading>
+<s-paragraph>Selected theme: <s-text id=fdt-theme-selected type=strong></s-text></s-paragraph>
+</s-stack>
+</s-stack>
+<s-box padding=base background=subdued border=base borderRadius=base>
+<s-stack direction=inline gap=small alignItems=center justifyContent=space-between>
+<s-stack direction=inline gap=small-200 alignItems=center>
+<s-box class="fdt-theme__dot fdt-theme__dot--done" padding=small-100 borderRadius=base background=strong><s-text type=strong>1</s-text></s-box>
+<s-text>Theme Editor</s-text>
+</s-stack>
+<s-icon type=chevron-right color=subdued></s-icon>
+<s-stack direction=inline gap=small-200 alignItems=center>
+<s-box class="fdt-theme__dot fdt-theme__dot--done" padding=small-100 borderRadius=base background=strong><s-text type=strong>2</s-text></s-box>
+<s-text>App Embeds</s-text>
+</s-stack>
+<s-icon type=chevron-right color=subdued></s-icon>
+<s-stack direction=inline gap=small-200 alignItems=center>
+<s-box class="fdt-theme__dot fdt-theme__dot--done" padding=small-100 borderRadius=base background=strong><s-text type=strong>3</s-text></s-box>
+<s-text>Enable App</s-text>
+</s-stack>
+<s-icon type=chevron-right color=subdued></s-icon>
+<s-stack direction=inline gap=small-200 alignItems=center>
+<s-box class="fdt-theme__dot fdt-theme__dot--save" padding=small-100 borderRadius=base background=subdued><s-text type=strong>4</s-text></s-box>
+<s-text>Save</s-text>
+</s-stack>
+</s-stack>
+</s-box>
+<div id=fdt-theme-embed-banner></div>
+</s-stack>
+<s-button id=fdt-theme-back slot=secondary-actions variant=secondary>Back</s-button>
+<s-button id=fdt-theme-enable slot=primary-action variant=primary icon=external>Enable App In Theme Editor</s-button>
+</s-modal>
+
+<s-modal id=fdt-theme-editor heading="Theme editor" size=small-100 hidden>
+<s-paragraph id=fdt-theme-editor-copy></s-paragraph>
+<div id=fdt-theme-editor-actions class=fdt-theme__footer></div>
+</s-modal>
+</div>
+
+<div id=fdt-theme-chat class=fdt-theme__chat hidden>
+<div class=fdt-theme__chat-head>
+<s-text>Support Chat</s-text>
+<s-button id=fdt-theme-chat-close variant=tertiary accessibilityLabel=Close>✕</s-button>
+</div>
+<div id=fdt-theme-chat-log class=fdt-theme__chat-log></div>
+<form id=fdt-theme-chat-form class=fdt-theme__chat-form>
+<s-text-field id=fdt-theme-chat-input label="Message" labelAccessibilityVisibility=exclusive placeholder="Type a message" name=chatMessage>
+<input class=fdt-theme__field type=text placeholder="Type a message" autocomplete=off>
+</s-text-field>
+<s-button type=submit variant=primary>Send</s-button>
+</form>
+</div>
+</div>

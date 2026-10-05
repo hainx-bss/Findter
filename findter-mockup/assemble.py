@@ -178,6 +178,7 @@ def split(monolith: str) -> None:
     links += (
         '\n<link rel=stylesheet href="components/welcome-banner/welcome.css">'
         '\n<link rel=stylesheet href="components/highlight-features/highlight.css">'
+        '\n<link rel=stylesheet href="components/theme-compatibility/theme.css">'
     )
     head = head.replace(
         "style-src 'unsafe-inline'",
@@ -318,6 +319,7 @@ def build() -> None:
     after = (ROOT / "admin" / "chrome" / "after-frame.html").read_text(encoding="utf-8")
     welcome = (ROOT / "components" / "welcome-banner" / "welcome.html").read_text(encoding="utf-8")
     highlight = (ROOT / "components" / "highlight-features" / "highlight.html").read_text(encoding="utf-8")
+    theme = (ROOT / "components" / "theme-compatibility" / "theme.html").read_text(encoding="utf-8")
     index = (
         head
         + "\n"
@@ -327,8 +329,10 @@ def build() -> None:
         + after
         + welcome
         + highlight
+        + theme
         + '<script src="components/welcome-banner/welcome.js"></script>\n'
         + '<script src="components/highlight-features/highlight.js"></script>\n'
+        + '<script src="components/theme-compatibility/theme.js"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)
