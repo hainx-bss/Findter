@@ -177,7 +177,7 @@ def split(monolith: str) -> None:
     )
     links += (
         '\n<link rel=stylesheet href="components/welcome-banner/welcome.css">'
-        '\n<link rel=stylesheet href="components/highlight-features/highlight.css">'
+        '\n<link rel=stylesheet href="components/highlight-features/highlight.css?v=3">'
         '\n<link rel=stylesheet href="components/mockup-cases/mockup-cases.css">'
     )
     head = head.replace(
@@ -315,6 +315,21 @@ def split(monolith: str) -> None:
 
 def build() -> None:
     head = (ROOT / "admin" / "document-head.html").read_text(encoding="utf-8")
+    # Live s-* on the parent highlight overlay needs polaris.js from the Shopify CDN.
+    if "https://cdn.shopify.com" not in head.split("script-src", 1)[-1].split(";", 1)[0]:
+        head = head.replace(
+            "script-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' https://cdn.shopify.com",
+            1,
+        ).replace(
+            "script-src 'self' 'unsafe-inline' data:",
+            "script-src 'self' 'unsafe-inline' data: https://cdn.shopify.com",
+            1,
+        )
+    head = head.replace(
+        'href="components/highlight-features/highlight.css"',
+        'href="components/highlight-features/highlight.css?v=7"',
+    )
     before = (ROOT / "admin" / "chrome" / "before-frame.html").read_text(encoding="utf-8")
     after = (ROOT / "admin" / "chrome" / "after-frame.html").read_text(encoding="utf-8")
     welcome = (ROOT / "components" / "welcome-banner" / "welcome.html").read_text(encoding="utf-8")
@@ -328,9 +343,10 @@ def build() -> None:
         + after
         + welcome
         + highlight
+        + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
         + '<script src="components/welcome-banner/welcome.js?v=2"></script>\n'
-        + '<script src="components/highlight-features/highlight.js?v=2"></script>\n'
-        + '<script src="components/mockup-cases/mockup-cases.js?v=3"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=11"></script>\n'
+        + '<script src="components/mockup-cases/mockup-cases.js?v=4"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)
