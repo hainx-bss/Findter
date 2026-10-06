@@ -462,7 +462,8 @@
     page.hidden = false;
     advanced.hidden = true;
     closeMedia();
-    renderBanner();
+    // Default: restart indexing whenever the highlight screen opens.
+    resetIndex();
     pageWidget.show(reset);
     place();
   }
@@ -584,6 +585,7 @@
   });
 
   document.getElementById("fdt-hf-home").addEventListener("click", function () {
+    if (!indexed()) return;
     localStorage.setItem(KEY.continueClicked, "true");
     track("highlight_continue_clicked", {
       source: "highlight_page",
@@ -605,7 +607,19 @@
     restoreBack();
   });
   window.addEventListener("resize", place);
-  if (welcome) new MutationObserver(function () { present(true); }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  if (welcome) {
+    new MutationObserver(function () {
+      if (welcomeOpen()) {
+        root.hidden = true;
+        if (pageWidget) pageWidget.stop();
+        return;
+      }
+      // Continue / X / Esc on welcome banner → Highlight Features (not homepage).
+      localStorage.removeItem(KEY.continueClicked);
+      sessionStorage.removeItem(SESSION_HIDE);
+      showHighlight(true);
+    }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  }
   if (frame) frame.addEventListener("load", function () { if (mode === "home") mountHomeCard(); });
 
   function startIndexTimer() {

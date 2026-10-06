@@ -178,9 +178,14 @@
   } catch (error) {}
   render();
   place();
-  shownAt = Date.now();
-  root.hidden = false;
-  track("welcome_modal_shown", {});
-  continueBtn.focus();
-  startAuto();
+  if (force || !seen()) {
+    shownAt = Date.now();
+    root.hidden = false;
+    track("welcome_modal_shown", {});
+    continueBtn.focus();
+    startAuto();
+  } else {
+    closed = true;
+    root.hidden = true;
+  }
 })();

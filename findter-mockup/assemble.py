@@ -344,8 +344,8 @@ def build() -> None:
         + welcome
         + highlight
         + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
-        + '<script src="components/welcome-banner/welcome.js?v=2"></script>\n'
-        + '<script src="components/highlight-features/highlight.js?v=11"></script>\n'
+        + '<script src="components/welcome-banner/welcome.js?v=3"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=14"></script>\n'
         + '<script src="components/mockup-cases/mockup-cases.js?v=4"></script>\n'
         + "</body></html>\n"
     )
