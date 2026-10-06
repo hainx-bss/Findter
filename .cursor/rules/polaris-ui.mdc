@@ -7,6 +7,14 @@ alwaysApply: true
 
 Build every screen with Shopify Polaris web components (`s-*`). They carry the Shopify admin theme. Do not create a new UI component, custom control, or visual style.
 
+## CDN (this mockup)
+
+App Home (`findter-mockup/app/`, assembled into `app/home.html`) loads live Polaris 2.0 RC:
+
+`https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js`
+
+Add that script in the app iframe `<head>` only (see `app/shell.html`). Do not load `polaris.js` or `polaris-1.js` alongside it. Do not add it to the frozen admin chrome parent page.
+
 ## Use
 
 - Existing Polaris web components: `s-page`, `s-section`, `s-stack`, `s-grid`, `s-button`, `s-text`, `s-text-field`, `s-banner`, `s-badge`, `s-table`, and the other `s-*` elements in App Home.

@@ -54,8 +54,9 @@ IFRAME = (
     'src="app/home.html" '
     'style="position:relative;border-width:medium;border-style:none;'
     'border-color:currentcolor;border-image:none;width:100%;flex:1 1 0%;display:flex" '
-    'sandbox="allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>'
+    'sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>'
 )
+
 
 
 def style_blocks(html: str, limit: int | None = None) -> list[tuple[int, int, str]]:
