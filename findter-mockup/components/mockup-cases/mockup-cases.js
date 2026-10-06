@@ -24,6 +24,12 @@
       '<p class="fdt-mockup-menu__label">Mockup cases</p>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="banner">View banner</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="highlight">View highlight features</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="master">View Master</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor">View Theme Editor</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor-incompatible">View Theme Editor (incompatible)</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor-empty">View Theme Editor (no selectors)</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor-fail">View Theme Editor (wrong selector)</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-fix">Reset Fix it yourself</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-index">Reset index</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-chat">Reset chat</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-support-theme">Reset support theme</button>';
@@ -66,9 +72,44 @@
       if (window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
         window.FindterWelcome.hide();
       }
+      if (window.FindterMaster && typeof window.FindterMaster.hide === "function") {
+        window.FindterMaster.hide();
+      }
       if (window.FindterHighlight && typeof window.FindterHighlight.show === "function") {
         window.FindterHighlight.show();
       }
+      return;
+    }
+    if (name === "master") {
+      if (window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
+        window.FindterWelcome.hide();
+      }
+      if (window.FindterMaster && typeof window.FindterMaster.show === "function") {
+        window.FindterMaster.show();
+      }
+      return;
+    }
+    if (name === "theme-editor") {
+      location.assign("screens/theme-editor/index.html");
+      return;
+    }
+    if (name === "theme-editor-incompatible") {
+      location.assign("screens/theme-editor/index.html?themeIssue=1");
+      return;
+    }
+    if (name === "theme-editor-empty") {
+      location.assign("screens/theme-editor/index.html?themeIssue=1&detect=empty");
+      return;
+    }
+    if (name === "theme-editor-fail") {
+      location.assign("screens/theme-editor/index.html?themeIssue=1&detect=fail");
+      return;
+    }
+    if (name === "reset-fix") {
+      try {
+        localStorage.removeItem("findter.theme.fix.v1");
+        localStorage.removeItem("findter.theme.supportFromFix.v1");
+      } catch (error) {}
       return;
     }
     if (name === "reset-index") {

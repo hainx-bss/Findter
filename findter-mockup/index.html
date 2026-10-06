@@ -18,6 +18,7 @@
 <link rel=stylesheet href="admin/styles/snapshot.css">
 <link rel=stylesheet href="components/welcome-banner/welcome.css">
 <link rel=stylesheet href="components/highlight-features/highlight.css?v=7">
+<link rel=stylesheet href="components/master/master.css?v=1">
 <link rel=stylesheet href="components/mockup-cases/mockup-cases.css">
 </head>
 <body style=background-color:var(--admin-next-ios-status-bar-color);color:var(--p-color-text) data-dux-initialized=1>
@@ -792,7 +793,7 @@
 <li class=_ListItem_182cl_666 style=--nav-enter-index:0>
 <div class=_ItemWrapper_182cl_293 data-navitem=item-wrapper>
 <div class=_ItemInnerWrapper_182cl_281 data-navitem=item-inner-wrapper>
-<a data-polaris-unstyled=true class=_Item_182cl_155 tabindex=0 aria-disabled=false data-navitem=item href=#Settings data-discover=true>
+<a data-polaris-unstyled=true class=_Item_182cl_155 tabindex=0 aria-disabled=false data-navitem=item href=#Master data-discover=true id=fdt-nav-master>
 <div class=_Icon_182cl_246>
 <s-internal-icon type=settings tone=legacy-inherit>
 <template shadowrootmode=open>
@@ -810,7 +811,7 @@
 </s-internal-icon>
 </div>
 <span class=_Text_182cl_433>
-<span class="Polaris-Text--root Polaris-Text--bodyMd Polaris-Text--regular">Settings
+<span class="Polaris-Text--root Polaris-Text--bodyMd Polaris-Text--regular">Master
 </span>
 </span>
 </a>
@@ -2292,9 +2293,11 @@
 <div id=fdt-hf-body></div>
 </s-stack>
 </s-section>
-<s-stack id=fdt-hf-continue direction=inline justifyContent=end hidden>
+<div id=fdt-hf-continue hidden>
+<s-stack direction=inline justifyContent=end>
 <s-button type=button id=fdt-hf-home variant=primary>Continue to Homepage</s-button>
 </s-stack>
+</div>
 </s-stack>
 </div>
 <div id=fdt-hf-advanced class=fdt-hf__page hidden>
@@ -2307,8 +2310,71 @@
 <s-button slot=secondary-actions commandFor=fdt-hf-media command=--hide>Close</s-button>
 </s-modal>
 </div>
+<div id=fdt-master class=fdt-master hidden>
+<div class=fdt-master__page>
+<s-page heading=Master>
+<s-button slot=primary-action type=button id=fdt-master-add-group variant=primary>Add Group</s-button>
+<s-button slot=secondary-actions type=button id=fdt-master-add-feature variant=secondary>Add Feature</s-button>
+<s-section heading="Highlight features">
+<s-paragraph color=subdued>Manage groups and features shown on the Highlight Features page and Homepage card.</s-paragraph>
+<div id=fdt-master-list></div>
+</s-section>
+</s-page>
+</div>
+
+<s-modal id=fdt-master-group-modal heading="Add Group" size=base>
+<s-stack gap=base>
+<s-text-field id=fdt-master-group-name label="Group Name" required></s-text-field>
+<s-checkbox id=fdt-master-group-standalone label=Standalone details="Tick nếu muốn Group này tự thân là 1 Feature (ví dụ: Year Make Model)"></s-checkbox>
+<div id=fdt-master-group-standalone-fields hidden>
+<s-stack gap=base>
+<s-text-field id=fdt-master-group-feature-title label="Feature Title"></s-text-field>
+<s-text-field id=fdt-master-group-thumbnail label="Thumbnail Link"></s-text-field>
+<s-text-field id=fdt-master-group-media label="Media Link"></s-text-field>
+<s-select id=fdt-master-group-media-type label="Media Type">
+<option value="">Select type</option>
+<option value=image>image</option>
+<option value=video>video</option>
+<option value=gif>gif</option>
+</s-select>
+<s-text-field id=fdt-master-group-navigate label="Navigate Link"></s-text-field>
+</s-stack>
+</div>
+</s-stack>
+<s-button slot=secondary-actions type=button commandFor=fdt-master-group-modal command=--hide>Cancel</s-button>
+<s-button slot=primary-action type=button id=fdt-master-group-save variant=primary>Save</s-button>
+</s-modal>
+
+<s-modal id=fdt-master-feature-modal heading="Add Feature" size=base>
+<s-stack gap=base>
+<s-select id=fdt-master-feature-parent label="Parent Group" required>
+<option value="">Select a group</option>
+</s-select>
+<s-text-field id=fdt-master-feature-title label=Title required></s-text-field>
+<s-text-field id=fdt-master-feature-thumbnail label="Thumbnail Link"></s-text-field>
+<s-text-field id=fdt-master-feature-media label="Media Link"></s-text-field>
+<s-select id=fdt-master-feature-media-type label="Media Type">
+<option value="">Select type</option>
+<option value=image>image</option>
+<option value=video>video</option>
+<option value=gif>gif</option>
+</s-select>
+<s-text-field id=fdt-master-feature-navigate label="Navigate Link"></s-text-field>
+<s-switch id=fdt-master-feature-enabled label=Enable checked></s-switch>
+</s-stack>
+<s-button slot=secondary-actions type=button commandFor=fdt-master-feature-modal command=--hide>Cancel</s-button>
+<s-button slot=primary-action type=button id=fdt-master-feature-save variant=primary>Save</s-button>
+</s-modal>
+
+<s-modal id=fdt-master-delete-modal heading="Confirm delete" size=small-100>
+<s-paragraph id=fdt-master-delete-message>Do you want to delete this feature?</s-paragraph>
+<s-button slot=secondary-actions type=button commandFor=fdt-master-delete-modal command=--hide>Cancel</s-button>
+<s-button slot=primary-action type=button id=fdt-master-delete-confirm variant=primary tone=critical>Delete</s-button>
+</s-modal>
+</div>
 <script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>
-<script src="components/welcome-banner/welcome.js?v=2"></script>
-<script src="components/highlight-features/highlight.js?v=11"></script>
-<script src="components/mockup-cases/mockup-cases.js?v=4"></script>
+<script src="components/welcome-banner/welcome.js?v=3"></script>
+<script src="components/highlight-features/highlight.js?v=16"></script>
+<script src="components/master/master.js?v=1"></script>
+<script src="components/mockup-cases/mockup-cases.js?v=9"></script>
 </body></html>

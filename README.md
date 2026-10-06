@@ -6,6 +6,13 @@ Static Shopify-admin mockups for the Findter Filter & Search app.
 
 Source lives in `findter-mockup/`. Open `findter-mockup/index.html` locally, or use the published GitHub Pages site after deploy.
 
+| Entry | Path |
+| --- | --- |
+| Findter App Home | `findter-mockup/index.html` |
+| Theme Editor (enable app embed) | `findter-mockup/screens/theme-editor/index.html` |
+
+From App Home, use the overflow **Mockup cases** menu → **View Theme Editor**, or complete the theme flow and click **Enable App In Theme Editor**.
+
 ## GitHub Pages
 
 Auto-deploy runs from `.github/workflows/deploy-pages.yml`:

@@ -4,7 +4,7 @@
   var INDEX_MS = 10000;
   var HOUR_MS = 3600 * 1000;
   var KEY = {
-    items: "findter.highlight.items.v4",
+    items: "findter.highlight.items.v5",
     continueClicked: "findter.highlight.continue",
     viewFeature: "findter.highlight.viewFeature",
     indexCompletedAt: "findter.highlight.indexCompletedAt",
@@ -12,11 +12,20 @@
   };
   var SESSION_HIDE = "findter.highlight.sessionHide";
   var BACK_TARGET = "findter.highlight.backTarget";
+  // Absolute URLs so parent overlay and iframe homepage card both resolve.
+  function assetUrl(file) {
+    return new URL("components/highlight-features/media/" + file, location.href).href;
+  }
+  var MEDIA = {
+    longVideo: assetUrl("preview-long.mp4"),
+    shortVideo: assetUrl("preview-short.mp4"),
+    image: assetUrl("preview-image.png")
+  };
   var SEED = [
     { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features" },
+    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: MEDIA.longVideo, media: MEDIA.longVideo, navigateUrl: "features" },
+    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: MEDIA.shortVideo, media: MEDIA.shortVideo, navigateUrl: "features" },
+    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: MEDIA.image, media: MEDIA.image, navigateUrl: "features" },
     { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" },
     { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features" },
     { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
@@ -43,6 +52,7 @@
   var indexTimer = null;
 
   try { localStorage.removeItem("findter.highlight.indexMs"); } catch (error) {}
+  try { localStorage.removeItem("findter.highlight.items.v4"); } catch (error) {}
 
   function readItems() {
     try {
@@ -241,9 +251,48 @@
       timer = null;
     }
 
+    function canAutoAdvance() {
+      return !!(options.autoplay && !hovering && !modalOpen && mode === "highlight" && root && !root.hidden);
+    }
+
+    // Image / empty: SLIDE_MS. Short video: advance on ended. Long video: cut at SLIDE_MS.
     function armTimer() {
       stopTimer();
-      if (!options.autoplay || hovering || modalOpen || mode !== "highlight" || !root || root.hidden) return;
+      if (!canAutoAdvance()) return;
+      var slide = current();
+      var url = slide && (slide.feature.media || slide.feature.thumbnail);
+      var kind = mediaKind(url);
+      if (kind === "video") {
+        var video = bodyEl.querySelector("video");
+        if (!video) {
+          timer = setTimeout(advance, SLIDE_MS);
+          return;
+        }
+        if (video.ended) {
+          advance();
+          return;
+        }
+        function scheduleFromDuration() {
+          if (!canAutoAdvance() || !video.isConnected) return;
+          var durMs = video.duration * 1000;
+          if (!isFinite(durMs) || durMs <= 0) {
+            stopTimer();
+            timer = setTimeout(advance, SLIDE_MS);
+            return;
+          }
+          // Short clip: clear fallback timer and wait for ended (hooked in playMedia).
+          // Long clip: cut at SLIDE_MS.
+          stopTimer();
+          if (durMs > SLIDE_MS) timer = setTimeout(advance, SLIDE_MS);
+        }
+        if (video.readyState >= 1 && isFinite(video.duration) && video.duration > 0) {
+          scheduleFromDuration();
+        } else {
+          video.addEventListener("loadedmetadata", scheduleFromDuration, { once: true });
+          timer = setTimeout(advance, SLIDE_MS);
+        }
+        return;
+      }
       timer = setTimeout(advance, SLIDE_MS);
     }
 
@@ -253,6 +302,11 @@
       var video = bodyEl.querySelector("video");
       if (video) {
         video.loop = false;
+        video.addEventListener("ended", function onEnded() {
+          stopTimer();
+          // Idle: advance to next feature. Not idle (hover/modal): keep last frame.
+          if (canAutoAdvance()) advance();
+        }, { once: true });
         var play = video.play();
         if (play && play.catch) play.catch(function () {});
       }
@@ -307,7 +361,7 @@
     }
 
     function advance() {
-      if (!options.autoplay || hovering || modalOpen || !list.length) return;
+      if (!canAutoAdvance() || !list.length) return;
       index = (index + 1) % list.length;
       render("auto_slide");
     }
@@ -372,6 +426,12 @@
       if (!frameEl) return;
       if (event.relatedTarget && frameEl.contains(event.relatedTarget)) return;
       hovering = false;
+      // If the short video already finished while hovering, move on immediately.
+      var video = bodyEl.querySelector("video");
+      if (video && video.ended) {
+        advance();
+        return;
+      }
       armTimer();
     });
 
@@ -462,7 +522,8 @@
     page.hidden = false;
     advanced.hidden = true;
     closeMedia();
-    renderBanner();
+    // Default: restart indexing whenever the highlight screen opens.
+    resetIndex();
     pageWidget.show(reset);
     place();
   }
@@ -584,6 +645,7 @@
   });
 
   document.getElementById("fdt-hf-home").addEventListener("click", function () {
+    if (!indexed()) return;
     localStorage.setItem(KEY.continueClicked, "true");
     track("highlight_continue_clicked", {
       source: "highlight_page",
@@ -605,7 +667,19 @@
     restoreBack();
   });
   window.addEventListener("resize", place);
-  if (welcome) new MutationObserver(function () { present(true); }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  if (welcome) {
+    new MutationObserver(function () {
+      if (welcomeOpen()) {
+        root.hidden = true;
+        if (pageWidget) pageWidget.stop();
+        return;
+      }
+      // Continue / X / Esc on welcome banner → Highlight Features (not homepage).
+      localStorage.removeItem(KEY.continueClicked);
+      sessionStorage.removeItem(SESSION_HIDE);
+      showHighlight(true);
+    }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  }
   if (frame) frame.addEventListener("load", function () { if (mode === "home") mountHomeCard(); });
 
   function startIndexTimer() {
