@@ -334,6 +334,21 @@ def build() -> None:
     after = (ROOT / "admin" / "chrome" / "after-frame.html").read_text(encoding="utf-8")
     welcome = (ROOT / "components" / "welcome-banner" / "welcome.html").read_text(encoding="utf-8")
     highlight = (ROOT / "components" / "highlight-features" / "highlight.html").read_text(encoding="utf-8")
+    master = (ROOT / "components" / "master" / "master.html").read_text(encoding="utf-8")
+    head = head.replace(
+        'href="components/highlight-features/highlight.css"',
+        'href="components/highlight-features/highlight.css?v=7"',
+    ).replace(
+        'href="components/master/master.css"',
+        'href="components/master/master.css?v=1"',
+    )
+    if "components/master/master.css" not in head:
+        head = head.replace(
+            'href="components/highlight-features/highlight.css?v=7"',
+            'href="components/highlight-features/highlight.css?v=7"\n'
+            '<link rel=stylesheet href="components/master/master.css?v=1">',
+            1,
+        )
     index = (
         head
         + "\n"
@@ -343,10 +358,12 @@ def build() -> None:
         + after
         + welcome
         + highlight
+        + master
         + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
         + '<script src="components/welcome-banner/welcome.js?v=3"></script>\n'
-        + '<script src="components/highlight-features/highlight.js?v=14"></script>\n'
-        + '<script src="components/mockup-cases/mockup-cases.js?v=4"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=16"></script>\n'
+        + '<script src="components/master/master.js?v=1"></script>\n'
+        + '<script src="components/mockup-cases/mockup-cases.js?v=9"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)
@@ -364,7 +381,7 @@ def build() -> None:
         home.rstrip()
         + "\n"
         + theme
-        + '\n<script src="../components/theme-compatibility/theme.js?v=4"></script>\n'
+        + '\n<script src="../components/theme-compatibility/theme.js?v=9"></script>\n'
     )
     write(ROOT / "app" / "home.html", home)
 

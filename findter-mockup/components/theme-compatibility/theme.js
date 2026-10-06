@@ -132,7 +132,19 @@
     localStorage.setItem(KEY.embed, JSON.stringify(state));
   }
 
+  function loadFixState() {
+    try {
+      return JSON.parse(localStorage.getItem("findter.theme.fix.v1") || "{}") || {};
+    } catch (error) {
+      return {};
+    }
+  }
+
   function compatibility(theme) {
+    var fix = loadFixState();
+    if (fix.compatible && (!fix.themeId || fix.themeId === theme.id)) {
+      return "compatible";
+    }
     if (theme.shop_status === "working_on_it") return "working_on_it";
     if (theme.shop_status === "compatible") return "compatible";
     var schemaOk = false;
@@ -285,7 +297,7 @@
       '<s-table>' +
       '<s-table-header-row>' +
       '<s-table-header listSlot="primary">Theme</s-table-header>' +
-      '<s-table-header>Status</s-table-header>' +
+      '<s-table-header format="numeric">Status</s-table-header>' +
       '</s-table-header-row>' +
       '<s-table-body>' +
       rows.map(function (theme) {
@@ -294,19 +306,24 @@
         var action;
         if (status === "compatible") action = '<s-badge tone="success">Compatible</s-badge>';
         else if (status === "working_on_it") {
-          action = '<s-stack direction="inline" gap="small" alignItems="center"><s-spinner accessibilityLabel="Working on it" size="base"></s-spinner><s-badge tone="warning">Working on it</s-badge></s-stack>';
+          action =
+            '<s-button type="button" variant="secondary" data-fix-yourself="' + esc(theme.id) + '">Fix it yourself</s-button>' +
+            '<s-spinner accessibilityLabel="Working on it" size="base"></s-spinner>' +
+            '<s-badge tone="warning">Working on it</s-badge>';
         } else {
-          action = '<s-button type="button" variant="secondary" data-support="' + esc(theme.id) + '">Get support</s-button>';
+          action =
+            '<s-button type="button" variant="secondary" data-fix-yourself="' + esc(theme.id) + '">Fix it yourself</s-button>' +
+            '<s-button type="button" variant="secondary" data-support="' + esc(theme.id) + '">Get support</s-button>';
         }
         var clickable = status === "compatible"
           ? ' data-theme="' + esc(theme.id) + '" role="button" tabindex="0"'
-          : status === "working_on_it"
-            ? ' data-theme="' + esc(theme.id) + '" aria-disabled="true"'
-            : ' data-theme="' + esc(theme.id) + '"';
+          : ' data-theme="' + esc(theme.id) + '"' + (status === "working_on_it" ? ' aria-disabled="true"' : "");
         return (
           '<s-table-row' + clickable + '>' +
           '<s-table-cell><s-stack direction="inline" gap="small" alignItems="center"><s-text type="strong">' + esc(theme.display_name) + "</s-text>" + live + "</s-stack></s-table-cell>" +
-          "<s-table-cell>" + action + "</s-table-cell>" +
+          '<s-table-cell><s-stack direction="inline" gap="small" alignItems="center" justifyContent="end">' +
+          action +
+          "</s-stack></s-table-cell>" +
           "</s-table-row>"
         );
       }).join("") +
@@ -378,6 +395,20 @@
     renderChat();
     if (chatField && typeof chatField.focus === "function") {
       setTimeout(function () { chatField.focus(); }, 50);
+    }
+  }
+
+  function openThemeEditorScreen(issue) {
+    try {
+      var target = new URL("../screens/theme-editor/index.html", location.href);
+      if (issue) target.searchParams.set("themeIssue", "1");
+      var href = target.href;
+      if (window.top && window.top !== window) window.top.location.assign(href);
+      else location.assign(href);
+    } catch (error) {
+      location.assign(
+        "../screens/theme-editor/index.html" + (issue ? "?themeIssue=1" : "")
+      );
     }
   }
 
@@ -566,6 +597,27 @@
   }
 
   listEl.addEventListener("click", function (event) {
+    var fixYourself = event.target.closest("[data-fix-yourself]");
+    if (fixYourself) {
+      event.preventDefault();
+      event.stopPropagation();
+      var fixTheme = themes().filter(function (item) {
+        return item.id === fixYourself.getAttribute("data-fix-yourself");
+      })[0];
+      if (!fixTheme) return;
+      selected = fixTheme;
+      try {
+        var fixState = loadFixState();
+        fixState.themeId = fixTheme.id;
+        localStorage.setItem("findter.theme.fix.v1", JSON.stringify(fixState));
+      } catch (error) {}
+      track("theme_fix_yourself_clicked", Object.assign({
+        source: "homepage",
+        theme_status: eventStatus(compatibility(fixTheme))
+      }, themeFields(fixTheme)));
+      openThemeEditorScreen(true);
+      return;
+    }
     var support = event.target.closest("[data-support]");
     if (support) {
       event.preventDefault();
@@ -611,7 +663,7 @@
     track("enable_app_in_theme_editor_clicked", Object.assign({ source: "homepage" }, themeFields(selected)));
     var params = new URLSearchParams(location.search);
     var issue = params.get("themeIssue") === "1";
-    openEditor(selected, issue);
+    openThemeEditorScreen(issue);
   });
   document.getElementById("fdt-theme-editor-actions").addEventListener("click", function (event) {
     var host = event.target.closest("[data-editor]");

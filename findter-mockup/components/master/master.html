@@ -1,0 +1,62 @@
+<div id=fdt-master class=fdt-master hidden>
+<div class=fdt-master__page>
+<s-page heading=Master>
+<s-button slot=primary-action type=button id=fdt-master-add-group variant=primary>Add Group</s-button>
+<s-button slot=secondary-actions type=button id=fdt-master-add-feature variant=secondary>Add Feature</s-button>
+<s-section heading="Highlight features">
+<s-paragraph color=subdued>Manage groups and features shown on the Highlight Features page and Homepage card.</s-paragraph>
+<div id=fdt-master-list></div>
+</s-section>
+</s-page>
+</div>
+
+<s-modal id=fdt-master-group-modal heading="Add Group" size=base>
+<s-stack gap=base>
+<s-text-field id=fdt-master-group-name label="Group Name" required></s-text-field>
+<s-checkbox id=fdt-master-group-standalone label=Standalone details="Tick nếu muốn Group này tự thân là 1 Feature (ví dụ: Year Make Model)"></s-checkbox>
+<div id=fdt-master-group-standalone-fields hidden>
+<s-stack gap=base>
+<s-text-field id=fdt-master-group-feature-title label="Feature Title"></s-text-field>
+<s-text-field id=fdt-master-group-thumbnail label="Thumbnail Link"></s-text-field>
+<s-text-field id=fdt-master-group-media label="Media Link"></s-text-field>
+<s-select id=fdt-master-group-media-type label="Media Type">
+<option value="">Select type</option>
+<option value=image>image</option>
+<option value=video>video</option>
+<option value=gif>gif</option>
+</s-select>
+<s-text-field id=fdt-master-group-navigate label="Navigate Link"></s-text-field>
+</s-stack>
+</div>
+</s-stack>
+<s-button slot=secondary-actions type=button commandFor=fdt-master-group-modal command=--hide>Cancel</s-button>
+<s-button slot=primary-action type=button id=fdt-master-group-save variant=primary>Save</s-button>
+</s-modal>
+
+<s-modal id=fdt-master-feature-modal heading="Add Feature" size=base>
+<s-stack gap=base>
+<s-select id=fdt-master-feature-parent label="Parent Group" required>
+<option value="">Select a group</option>
+</s-select>
+<s-text-field id=fdt-master-feature-title label=Title required></s-text-field>
+<s-text-field id=fdt-master-feature-thumbnail label="Thumbnail Link"></s-text-field>
+<s-text-field id=fdt-master-feature-media label="Media Link"></s-text-field>
+<s-select id=fdt-master-feature-media-type label="Media Type">
+<option value="">Select type</option>
+<option value=image>image</option>
+<option value=video>video</option>
+<option value=gif>gif</option>
+</s-select>
+<s-text-field id=fdt-master-feature-navigate label="Navigate Link"></s-text-field>
+<s-switch id=fdt-master-feature-enabled label=Enable checked></s-switch>
+</s-stack>
+<s-button slot=secondary-actions type=button commandFor=fdt-master-feature-modal command=--hide>Cancel</s-button>
+<s-button slot=primary-action type=button id=fdt-master-feature-save variant=primary>Save</s-button>
+</s-modal>
+
+<s-modal id=fdt-master-delete-modal heading="Confirm delete" size=small-100>
+<s-paragraph id=fdt-master-delete-message>Do you want to delete this feature?</s-paragraph>
+<s-button slot=secondary-actions type=button commandFor=fdt-master-delete-modal command=--hide>Cancel</s-button>
+<s-button slot=primary-action type=button id=fdt-master-delete-confirm variant=primary tone=critical>Delete</s-button>
+</s-modal>
+</div>
