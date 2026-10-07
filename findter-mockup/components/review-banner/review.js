@@ -97,6 +97,11 @@
     saveState();
     impressed = { thumbs: false, feedback: false };
     hoverSeen = {};
+    clearTimeout(thanksTimer);
+    thanksTimer = null;
+    modalEntry = null;
+    closingFromAction = null;
+    if (root) render();
   }
 
   function envelope(extra) {
@@ -136,9 +141,45 @@
   function showView(name) {
     ["thumbs", "thanks", "feedback"].forEach(function (key) {
       var el = view(key);
-      if (el) el.hidden = key !== name;
+      if (!el) return;
+      var show = key === name;
+      el.hidden = !show;
+      if (show) {
+        if (key === "thumbs") clearThumbs();
+        // Replay the short fade-in each time a view becomes visible.
+        el.classList.remove("fdt-fade-in");
+        void el.offsetWidth;
+        el.classList.add("fdt-fade-in");
+      }
     });
     root.hidden = !name;
+  }
+
+  function prefersReducedMotion() {
+    try {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function clearThumbs() {
+    if (!root) return;
+    var btns = root.querySelectorAll(".fdt-review__thumb");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.remove("is-selected", "is-anim");
+      btns[i].setAttribute("aria-pressed", "false");
+    }
+  }
+
+  function animateThumb(btn) {
+    if (!btn) return;
+    btn.setAttribute("aria-pressed", "true");
+    btn.classList.add("is-selected");
+    if (prefersReducedMotion()) return;
+    btn.classList.remove("is-anim");
+    void btn.offsetWidth; // restart the keyframe animation
+    btn.classList.add("is-anim");
   }
 
   function currentMode() {
@@ -307,20 +348,30 @@
     window.open(LISTING, "_blank", "noopener,noreferrer");
   }
 
-  function onReviewPath() {
+  function onReviewPath(btn) {
     track("review_banner_thumb_clicked", { thumb: "up" });
     assignSegment("findter_happy", "ET-03");
     requestReviewPrompt();
     state.reviewPathDone = true;
     saveState();
-    showThanksThen(function () {
-      render();
-    });
+    // UI only: play the thumbs-up animation, then swap to the thanks view.
+    animateThumb(btn);
+    var delay = prefersReducedMotion() ? 150 : 600;
+    setTimeout(function () {
+      showThanksThen(function () {
+        render();
+      });
+    }, delay);
   }
 
-  function onFeedbackPath() {
+  function onFeedbackPath(btn) {
     track("review_banner_thumb_clicked", { thumb: "down" });
-    openModal("thumbs_down");
+    // UI only: fill + small pop before opening the feedback modal (current flow).
+    animateThumb(btn);
+    var delay = prefersReducedMotion() ? 0 : 180;
+    setTimeout(function () {
+      openModal("thumbs_down");
+    }, delay);
   }
 
   function onDismissBanner() {
@@ -332,6 +383,16 @@
       lifetime_dismiss_count: state.lifetimeDismissCount
     });
     assignSegment("findter_review_dismissed", "ET-04");
+    render();
+  }
+
+  function onDismissFeedback() {
+    state.feedbackBannerHidden = true;
+    saveState();
+    track("feedback_banner_dismissed", {
+      dismiss_type: "close_x",
+      reason: isDevStore ? "development_store" : "after_review_path"
+    });
     render();
   }
 
@@ -441,9 +502,10 @@
       var btn = ev.target.closest("[data-action]");
       if (!btn || !root.contains(btn)) return;
       var action = btn.getAttribute("data-action");
-      if (action === "review-path") onReviewPath();
-      else if (action === "feedback-path") onFeedbackPath();
+      if (action === "review-path") onReviewPath(btn);
+      else if (action === "feedback-path") onFeedbackPath(btn);
       else if (action === "dismiss-banner") onDismissBanner();
+      else if (action === "dismiss-feedback") onDismissFeedback();
       else if (action === "open-feedback-banner") onOpenFeedbackBanner();
     });
 

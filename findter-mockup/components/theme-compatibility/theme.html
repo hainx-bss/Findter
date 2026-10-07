@@ -53,6 +53,32 @@
     <s-button id="fdt-theme-enable" slot="primary-action" variant="primary" icon="external">Enable App In Theme Editor</s-button>
   </s-modal>
 
+  <s-modal id="fdt-theme-collab" heading="Enter collaborator code" size="base">
+    <s-stack gap="large">
+      <s-stack direction="inline">
+        <s-button id="fdt-theme-collab-back" variant="plain" icon="arrow-left" accessibilityLabel="Back to themes"></s-button>
+      </s-stack>
+      <s-paragraph>Enter the 4-digit code so we can request access and make your theme compatible.</s-paragraph>
+      <s-box background="subdued" borderRadius="base" padding="base">
+        <div class="fdt-infobox">
+          <span class="fdt-infobox__icon"><s-icon type="info" tone="info"></s-icon></span>
+          <div class="fdt-infobox__body">
+            <s-text color="subdued">Find your collaborator code in Shopify Admin:</s-text>
+            <s-text><s-text type="strong">Settings</s-text> <s-text color="subdued">›</s-text> <s-text type="strong">Users and permissions</s-text> <s-text color="subdued">›</s-text> <s-text type="strong">Security</s-text> <s-text color="subdued">›</s-text> <s-text type="strong">Collaborators</s-text></s-text>
+          </div>
+        </div>
+      </s-box>
+      <s-stack gap="small-200" alignItems="center">
+        <s-text id="fdt-theme-otp-label" type="strong">Collaborator code</s-text>
+        <div id="fdt-theme-otp" class="fdt-otp" role="group" aria-labelledby="fdt-theme-otp-label" aria-describedby="fdt-theme-collab-error fdt-theme-collab-helper"></div>
+        <div id="fdt-theme-collab-error" class="fdt-otp-error" role="alert" aria-live="polite"></div>
+        <s-text id="fdt-theme-collab-helper" color="subdued">Only shared with the Findter support team.</s-text>
+      </s-stack>
+    </s-stack>
+    <s-button id="fdt-theme-collab-chat" slot="secondary-actions" variant="plain">Need help? Chat with us</s-button>
+    <s-button id="fdt-theme-collab-send" slot="primary-action" variant="primary" disabled>Send code</s-button>
+  </s-modal>
+
   <s-modal id="fdt-theme-editor" heading="Theme editor" size="small-100">
     <s-paragraph id="fdt-theme-editor-copy"></s-paragraph>
     <div id="fdt-theme-editor-actions"></div>
