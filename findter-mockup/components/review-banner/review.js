@@ -5,6 +5,11 @@
     "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal&st_campaign=rate-app&st_source=admin-web";
   var THANKS_MS = 10000;
   var INSTALL_DAYS = 14;
+  // Hold the thumbs card after a click so the press/pop/confetti finishes,
+  // then move to the review step (and open the listing). Reduced-motion is shorter.
+  // >>> Tune the step delay here <<<
+  var FEEDBACK_TRANSITION_DELAY = 3000;
+  var FEEDBACK_TRANSITION_DELAY_REDUCED = 600;
 
   var params = new URLSearchParams(location.search);
   // Parent page may pass query via iframe — also check parent
@@ -30,6 +35,7 @@
   var thanksTimer = null;
   var impressed = { thumbs: false, feedback: false };
   var hoverSeen = {};
+  var thumbsLocked = false;
 
   var root = document.getElementById("fdt-review-root");
   var modal = document.getElementById("fdt-feedback-modal");
@@ -97,6 +103,7 @@
     saveState();
     impressed = { thumbs: false, feedback: false };
     hoverSeen = {};
+    thumbsLocked = false;
     clearTimeout(thanksTimer);
     thanksTimer = null;
     modalEntry = null;
@@ -145,7 +152,7 @@
       var show = key === name;
       el.hidden = !show;
       if (show) {
-        if (key === "thumbs") clearThumbs();
+        if (key === "thumbs") { clearThumbs(); thumbsLocked = false; }
         // Replay the short fade-in each time a view becomes visible.
         el.classList.remove("fdt-fade-in");
         void el.offsetWidth;
@@ -167,9 +174,57 @@
     if (!root) return;
     var btns = root.querySelectorAll(".fdt-review__thumb");
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.remove("is-selected", "is-anim");
+      btns[i].classList.remove("is-selected", "is-anim", "is-pressing");
       btns[i].setAttribute("aria-pressed", "false");
+      btns[i].removeAttribute("aria-disabled");
     }
+  }
+
+  function setThumbsDisabled(disabled) {
+    if (!root) return;
+    var btns = root.querySelectorAll(".fdt-review__thumb");
+    for (var i = 0; i < btns.length; i++) {
+      if (disabled) btns[i].setAttribute("aria-disabled", "true");
+      else btns[i].removeAttribute("aria-disabled");
+    }
+  }
+
+  // Colored firework/confetti burst for thumbs up (Polaris token palette only).
+  // >>> Tune particle count, colors and duration here <<<
+  function spawnConfetti(btn) {
+    if (!btn || prefersReducedMotion()) return;
+    var colors = [
+      "--p-color-bg-fill-success",
+      "--p-color-bg-fill-info",
+      "--p-color-bg-fill-warning",
+      "--p-color-bg-fill-critical",
+      "--p-color-bg-fill-caution"
+    ];
+    function burst(count, scale) {
+      var layer = document.createElement("span");
+      layer.className = "fdt-review__confetti";
+      layer.setAttribute("aria-hidden", "true");
+      for (var i = 0; i < count; i++) {
+        var p = document.createElement("i");
+        var isStreak = Math.random() < 0.4;
+        var ang = (Math.PI * 2) * (i / count) + (Math.random() - 0.5) * 0.6;
+        var dist = (24 + Math.random() * 24) * scale; // 24–48px
+        p.className = isStreak ? "streak go" : "dot go";
+        p.style.setProperty("--tx", (Math.cos(ang) * dist).toFixed(1) + "px");
+        p.style.setProperty("--ty", (Math.sin(ang) * dist).toFixed(1) + "px");
+        p.style.setProperty("--rot", (ang * 180 / Math.PI + 90).toFixed(0) + "deg");
+        if (!isStreak) p.style.setProperty("--sz", (4 + Math.random() * 2).toFixed(0) + "px");
+        p.style.setProperty("--dur", (640 + Math.random() * 120).toFixed(0) + "ms");
+        p.style.background = "var(" + colors[Math.floor(Math.random() * colors.length)] + ")";
+        layer.appendChild(p);
+      }
+      btn.appendChild(layer);
+      setTimeout(function () {
+        if (layer.parentNode) layer.parentNode.removeChild(layer);
+      }, 1000);
+    }
+    burst(14, 1);
+    setTimeout(function () { burst(8, 0.7); }, 150);
   }
 
   function animateThumb(btn) {
@@ -349,29 +404,31 @@
   }
 
   function onReviewPath(btn) {
+    if (thumbsLocked) return;
+    thumbsLocked = true;
+    setThumbsDisabled(true);
     track("review_banner_thumb_clicked", { thumb: "up" });
     assignSegment("findter_happy", "ET-03");
-    requestReviewPrompt();
     state.reviewPathDone = true;
     saveState();
-    // UI only: play the thumbs-up animation, then swap to the thanks view.
+    // UI only: play pop + confetti and hold the card. The step/tab switch
+    // (open listing + move to thanks) happens ONLY after the delay below.
     animateThumb(btn);
-    var delay = prefersReducedMotion() ? 150 : 600;
+    spawnConfetti(btn);
+    var delay = prefersReducedMotion() ? FEEDBACK_TRANSITION_DELAY_REDUCED : FEEDBACK_TRANSITION_DELAY;
     setTimeout(function () {
+      requestReviewPrompt();
       showThanksThen(function () {
         render();
       });
     }, delay);
   }
 
-  function onFeedbackPath(btn) {
+  function onFeedbackPath() {
+    // Thumb down: open the feedback modal immediately — no 3s hold / no delay.
+    // (The delay + confetti only apply to thumb up; see onReviewPath.)
     track("review_banner_thumb_clicked", { thumb: "down" });
-    // UI only: fill + small pop before opening the feedback modal (current flow).
-    animateThumb(btn);
-    var delay = prefersReducedMotion() ? 0 : 180;
-    setTimeout(function () {
-      openModal("thumbs_down");
-    }, delay);
+    openModal("thumbs_down");
   }
 
   function onDismissBanner() {
@@ -508,6 +565,23 @@
       else if (action === "dismiss-feedback") onDismissFeedback();
       else if (action === "open-feedback-banner") onOpenFeedbackBanner();
     });
+
+    // YouTube-style press feedback: fill in on pointerdown, fade out on release.
+    // The expanding stroke ring rides on the existing .is-anim class (see CSS).
+    function clearPressing() {
+      var pressed = root.querySelectorAll(".fdt-review__thumb.is-pressing");
+      for (var i = 0; i < pressed.length; i++) {
+        pressed[i].classList.remove("is-pressing");
+      }
+    }
+    root.addEventListener("pointerdown", function (ev) {
+      if (thumbsLocked || prefersReducedMotion()) return;
+      var thumb = ev.target.closest(".fdt-review__thumb");
+      if (thumb && root.contains(thumb)) thumb.classList.add("is-pressing");
+    });
+    root.addEventListener("pointerup", clearPressing);
+    root.addEventListener("pointercancel", clearPressing);
+    root.addEventListener("pointerleave", clearPressing);
 
     root.addEventListener("mouseover", function (ev) {
       var target = "banner";
