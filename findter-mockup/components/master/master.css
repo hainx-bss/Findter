@@ -1,0 +1,36 @@
+/* Overlay shell only — place over the app iframe. Do not restyle s-* controls. */
+#fdt-master {
+  position: fixed;
+  z-index: 1500;
+  box-sizing: border-box;
+  padding: 1.5rem 0;
+  overflow: auto;
+  pointer-events: auto;
+  background: var(--p-color-bg, #f1f1f1);
+}
+
+#fdt-master[hidden] {
+  display: none;
+}
+
+#fdt-master .fdt-master__page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 62.375rem;
+  margin: 0 auto;
+  padding-inline: 1rem;
+}
+
+#fdt-master #fdt-master-group-standalone-fields[hidden] {
+  display: none;
+}
+
+#fdt-master .fdt-master__grip {
+  cursor: grab;
+  color: var(--p-color-icon-secondary, #8a8a8a);
+  user-select: none;
+}
+
+#fdt-master .fdt-master__child-name {
+  padding-inline-start: 1.5rem;
+}

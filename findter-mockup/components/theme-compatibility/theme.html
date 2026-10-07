@@ -1,0 +1,60 @@
+<div id="fdt-theme">
+  <s-modal id="fdt-theme-choose" heading="Choose your theme" size="base">
+    <s-stack gap="base">
+      <s-search-field
+        id="fdt-theme-search"
+        label="Search themes"
+        labelAccessibilityVisibility="exclusive"
+        placeholder="Search themes"
+        name="themeSearch"
+      ></s-search-field>
+      <div id="fdt-theme-list"></div>
+    </s-stack>
+    <s-button id="fdt-theme-close" slot="secondary-actions" variant="secondary" commandFor="fdt-theme-choose" command="--hide">Close</s-button>
+  </s-modal>
+
+  <s-modal id="fdt-theme-embed" heading="Enable app embed" size="base">
+    <s-stack gap="large">
+      <s-stack direction="inline" gap="base" alignItems="start">
+        <s-box padding="small" borderRadius="base" background="subdued">
+          <s-icon type="apps" tone="info"></s-icon>
+        </s-box>
+        <s-stack gap="small-200">
+          <s-heading>Step 2: Enable App Embed in Theme Editor</s-heading>
+          <s-paragraph>Selected theme: <s-text id="fdt-theme-selected" type="strong"></s-text></s-paragraph>
+        </s-stack>
+      </s-stack>
+      <s-box padding="base" background="subdued" border="base" borderRadius="base">
+        <s-stack direction="inline" gap="small" alignItems="center" justifyContent="space-between">
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-badge tone="success">1</s-badge>
+            <s-text>Theme Editor</s-text>
+          </s-stack>
+          <s-icon type="chevron-right" color="subdued"></s-icon>
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-badge tone="success">2</s-badge>
+            <s-text>App Embeds</s-text>
+          </s-stack>
+          <s-icon type="chevron-right" color="subdued"></s-icon>
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-badge tone="success">3</s-badge>
+            <s-text>Enable App</s-text>
+          </s-stack>
+          <s-icon type="chevron-right" color="subdued"></s-icon>
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-badge>4</s-badge>
+            <s-text>Save</s-text>
+          </s-stack>
+        </s-stack>
+      </s-box>
+      <div id="fdt-theme-embed-banner"></div>
+    </s-stack>
+    <s-button id="fdt-theme-back" slot="secondary-actions" variant="secondary">Back</s-button>
+    <s-button id="fdt-theme-enable" slot="primary-action" variant="primary" icon="external">Enable App In Theme Editor</s-button>
+  </s-modal>
+
+  <s-modal id="fdt-theme-editor" heading="Theme editor" size="small-100">
+    <s-paragraph id="fdt-theme-editor-copy"></s-paragraph>
+    <div id="fdt-theme-editor-actions"></div>
+  </s-modal>
+</div>

@@ -1,11 +1,11 @@
 ---
-description: App UI must use Polaris web components only. Do not create new UI components.
+description: Findter mockup app UI uses Shopify Polaris web components (s-*). Attributes, App Home gaps, admin shell vs app body, and the Polaris CDN.
 alwaysApply: true
 ---
 
-# Polaris-only UI
+# Polaris web components
 
-Build every screen with Shopify Polaris web components (`s-*`). They carry the Shopify admin theme. Do not create a new UI component, custom control, or visual style.
+This repo is a static Shopify-admin mockup for Findter Filter & Search, not an embedded Remix app. Mockup files live under `findter-mockup/`. `Findter.html` redirects to `index.html`. `python3 findter-mockup/assemble.py` rebuilds `index.html` and `app/home.html` from the parts.
 
 ## CDN (this mockup)
 
@@ -15,33 +15,72 @@ App Home (`findter-mockup/app/`, assembled into `app/home.html`) loads live Pola
 
 Add that script in the app iframe `<head>` only (see `app/shell.html`). Do not load `polaris.js` or `polaris-1.js` alongside it. Do not add it to the frozen admin chrome parent page.
 
-## Use
+## App UI
 
-- Existing Polaris web components: `s-page`, `s-section`, `s-stack`, `s-grid`, `s-button`, `s-text`, `s-text-field`, `s-banner`, `s-badge`, `s-table`, and the other `s-*` elements in App Home.
-- Polaris patterns when the screen matches one: empty state, index table, settings, details, homepage.
-- App Bridge for admin chrome: `shopify.toast.show`, `shopify.loading`, `s-app-nav`, and `data-save-bar` on a native `<form>`.
-- Global `s-*` tags with no import. Use `@shopify/polaris-types` only when a file needs types.
+Use public Polaris web components (`s-*`) for app UI content. The tags are global. Do not import `@shopify/polaris`, `@shopify/polaris-react`, or `@shopify/polaris-web-components`. Add `@shopify/polaris-types` only when a file needs types.
 
-## Do not
+Before writing a tag, look it up on the App Home docs:
 
-- Do not add a new component, wrapper, or design-system primitive.
-- Do not import `@shopify/polaris`, `@shopify/polaris-react`, or `@shopify/polaris-web-components`.
-- Do not restyle Polaris with custom CSS, inline styles, or a second theme.
-- Do not replace a Polaris component with a styled `div`, `span`, or `button`.
-- There is no `s-card` and no `s-form`. Use `s-section` for sections and a native `<form data-save-bar>` for save bars.
+- https://shopify.dev/docs/api/app-home
+- https://shopify.dev/docs/api/polaris/using-polaris-web-components
 
-```tsx
-<s-page heading="Products">
-  <s-section heading="All products">
-    <s-button variant="primary">Save</s-button>
+App Home is the surface for this mockup. Checkout and customer-account extensions are a different set (they include `s-form`). Do not copy those tags here.
+
+Use `s-page`, `s-section`, `s-stack`, `s-grid`, `s-box`, `s-button`, `s-text`, `s-text-field`, `s-banner`, `s-badge`, `s-table`, and the other public `s-*` elements. Match an App Home pattern when the screen is one: empty state, index table, settings, details, homepage.
+
+## Attributes
+
+- In JSX/TSX, multi-word properties are camelCase: `alignItems`, `borderRadius`, `accessibilityLabel`, `gridTemplateColumns`, `commandFor`. Do not hyphenate them (`align-items`).
+- In HTML mockup files, use those same property names. The HTML parser lowercases them (`accessibilitylabel`). `accessibilityLabel` and `accessibilitylabel` are one attribute. Do not switch to CSS kebab-case.
+- Slot values stay kebab-case: `slot="primary-action"`.
+- Boolean attributes (`disabled`, `loading`, `dismissible`, `required`): in JSX, shorthand or `{true}` / `{false}`. In HTML, presence means true; omit the attribute for false. `disabled="false"` is still true.
+- String keyword attributes must be quoted strings: `padding`, `gap`, `direction`, `tone`, `variant`, `size`, `background`, `alignItems`, `inlineSize`. Write `gap="base"`, `variant="primary"`, `tone="info"`. Do not use boolean shorthand or an unquoted identifier. Spacing uses the middle-out scale: `small`, `base`, `large`, and steps such as `small-100` and `large-100`.
+
+## Known gaps
+
+There is no `s-card`. Use `s-section` for a section.
+
+There is no `s-form` in App Home. Use a native `<form data-save-bar>` when the screen needs a save bar, and `data-discard-confirmation` when discard should ask first. This mockup has no App Bridge runtime, so `shopify.toast`, `shopify.loading`, and the save bar do not run here. Still use the native form. Do not build a fake save bar.
+
+## Mockup split
+
+Admin chrome (global nav, top bar) is the existing HTML mock in `findter-mockup/admin/` (`document-head.html`, `admin/chrome/before-frame.html`, `admin/chrome/after-frame.html`), assembled into `index.html`. Shopify does not publish that shell. `s-internal-*` is internal. Leave the chrome mock as it is.
+
+App body is the iframe document: parts in `findter-mockup/app/`, assembled into `app/home.html`. New or replaced app-body UI is public `s-*`.
+
+Other Admin surfaces that are not App Home (for example Theme Editor for the app-embed case) live under `findter-mockup/screens/` as frozen SingleFile pages. Do not run those through `assemble.py`.
+
+The current pages are a SingleFile snapshot. They do not load a Polaris `<script>`. Rendered components are frozen in `<template shadowrootmode="open">`, mixed with legacy `Polaris-*` class markup. The only page scripts `assemble.py` adds are `components/welcome-banner/welcome.js` and `components/highlight-features/highlight.js`.
+
+When new markup must register live `s-*` elements, add exactly one script in that document's `<head>`:
+
+`https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js`
+
+This mockup uses the Polaris 2.0 RC channel (see `app/shell.html`). Do not load `polaris.js` or `polaris-1.js` alongside it. Do not add the script to the frozen admin chrome parent page. Do not copy shadow-root CSS out of the snapshot to imitate a component.
+
+## Styling and copy
+
+Do not restyle Polaris with custom CSS, inline styles, or utility classes on buttons, badges, banners, inputs, or other `s-*` controls. This repo has no Tailwind build. Admin-shell CSS under `findter-mockup/admin/styles/` stays with the chrome mock. `app/styles/polaris-tokens.css` is snapshot theme data; do not add a second theme.
+
+Merchant-facing copy is English for EU merchants. Reuse the wording already in the mockup. Do not invent algorithm, ranking, or model names for merchants.
+
+## When nothing fits
+
+Compose existing `s-*` pieces. Ask before adding a custom control, wrapper, or visual style.
+
+```html
+<s-page heading="Search settings">
+  <s-section heading="Basic search">
+    <s-stack gap="base">
+      <s-banner tone="info">Check search relevance details.</s-banner>
+      <s-button variant="primary">Search settings page</s-button>
+    </s-stack>
   </s-section>
 </s-page>
 ```
 
-```tsx
-<div className="card">
-  <button className="btn-primary">Save</button>
+```html
+<div class="card">
+  <button class="Polaris-Button Polaris-Button--variantPrimary">Search settings page</button>
 </div>
 ```
-
-If no Polaris component covers the case, compose existing `s-*` components. Ask before adding anything outside Polaris.

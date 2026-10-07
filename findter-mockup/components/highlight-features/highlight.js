@@ -1,10 +1,10 @@
 (function () {
   var SHOP = "khgym6-d1.myshopify.com";
   var SLIDE_MS = 7000;
-  var INDEX_MS = 8000;
+  var INDEX_MS = 10000;
   var HOUR_MS = 3600 * 1000;
   var KEY = {
-    items: "findter.highlight.items.v4",
+    items: "findter.highlight.items.v5",
     continueClicked: "findter.highlight.continue",
     viewFeature: "findter.highlight.viewFeature",
     indexCompletedAt: "findter.highlight.indexCompletedAt",
@@ -12,11 +12,20 @@
   };
   var SESSION_HIDE = "findter.highlight.sessionHide";
   var BACK_TARGET = "findter.highlight.backTarget";
+  // Absolute URLs so parent overlay and iframe homepage card both resolve.
+  function assetUrl(file) {
+    return new URL("components/highlight-features/media/" + file, location.href).href;
+  }
+  var MEDIA = {
+    longVideo: assetUrl("preview-long.mp4"),
+    shortVideo: assetUrl("preview-short.mp4"),
+    image: assetUrl("preview-image.png")
+  };
   var SEED = [
     { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features" },
+    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: MEDIA.longVideo, media: MEDIA.longVideo, navigateUrl: "features" },
+    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: MEDIA.shortVideo, media: MEDIA.shortVideo, navigateUrl: "features" },
+    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: MEDIA.image, media: MEDIA.image, navigateUrl: "features" },
     { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" },
     { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features" },
     { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
@@ -34,7 +43,6 @@
   var advanced = document.getElementById("fdt-hf-advanced");
   var advancedFocus = document.getElementById("fdt-hf-advanced-focus");
   var mediaModal = document.getElementById("fdt-hf-media");
-  var mediaTitle = document.getElementById("fdt-hf-media-title");
   var mediaStage = document.getElementById("fdt-hf-media-stage");
   var welcome = document.getElementById("fdt-welcome");
   var frame = document.querySelector("iframe[name=app-iframe]");
@@ -42,6 +50,9 @@
   var homeWidget = null;
   var mode = "hidden";
   var indexTimer = null;
+
+  try { localStorage.removeItem("findter.highlight.indexMs"); } catch (error) {}
+  try { localStorage.removeItem("findter.highlight.items.v4"); } catch (error) {}
 
   function readItems() {
     try {
@@ -149,6 +160,16 @@
     return true;
   }
 
+  function homeContentWidth() {
+    try {
+      var doc = frame && frame.contentDocument;
+      var pageEl = doc && doc.querySelector("s-page");
+      var content = pageEl && pageEl.shadowRoot && pageEl.shadowRoot.querySelector(".page-content");
+      if (content) return content.getBoundingClientRect().width;
+    } catch (err) {}
+    return 0;
+  }
+
   function place() {
     if (!frame || root.hidden) return;
     var rect = frame.getBoundingClientRect();
@@ -156,33 +177,62 @@
     root.style.left = rect.left + "px";
     root.style.width = rect.width + "px";
     root.style.height = rect.height + "px";
+    var width = homeContentWidth();
+    if (width > 0) {
+      var px = Math.round(width) + "px";
+      if (page) {
+        page.style.width = px;
+        page.style.maxWidth = "100%";
+        page.style.paddingInline = "0";
+      }
+      if (advanced) {
+        advanced.style.width = px;
+        advanced.style.maxWidth = "100%";
+        advanced.style.paddingInline = "0";
+      }
+    }
   }
 
   function renderBanner() {
     var done = indexed();
-    banner.className = "fdt-hf__banner" + (done ? " fdt-hf__banner--done" : "");
-    banner.innerHTML = done
-      ? "<strong>Data indexing is completed.</strong><span>Look through the features below, or start onboarding to activate Findter on your theme.</span>"
-      : "<strong>Collecting data</strong><span>Up-to-date data are being collected. Please wait until this process is complete before continuing with the app.</span>";
-    continueRow.hidden = !done;
+    banner.setAttribute("heading", done ? "Data indexing is completed." : "Collecting data");
+    banner.setAttribute("tone", done ? "success" : "warning");
+    banner.textContent = done
+      ? "Look through the features below, or start onboarding to activate Findter on your theme."
+      : "Up-to-date data are being collected. Please wait until this process is complete before continuing with the app.";
+    if (done) continueRow.removeAttribute("hidden");
+    else continueRow.setAttribute("hidden", "");
   }
 
-  function previewHtml(slide, showView) {
+  function previewHtml(slide, showView, layout) {
     var feature = slide.feature;
     var url = feature.media || feature.thumbnail;
     var kind = mediaKind(url);
+    var wrapClass = "fdt-hf__media fdt-hf__media--" + (layout === "solo" ? "solo" : "group");
     var frameHtml;
     if (!url) {
-      frameHtml = '<div class="fdt-hf__frame fdt-hf__frame--empty" role="img" aria-label="' + esc(feature.name) + ' preview"><span class="fdt-hf__empty"><strong>' + esc(feature.name) + '</strong><span>Image or video preview will appear here</span></span></div>';
+      frameHtml =
+        '<div class="' + wrapClass + ' fdt-hf__media--empty" role="img" aria-label="' + esc(feature.name) + ' preview">' +
+        '<span class="fdt-hf__media-label">Image or video preview will appear here</span>' +
+        "</div>";
     } else if (kind === "video") {
-      frameHtml = '<button type="button" class="fdt-hf__frame" data-media-src="' + esc(url) + '" data-media-kind="video" data-media-name="' + esc(feature.name) + '" aria-label="Play preview of ' + esc(feature.name) + '"><video muted playsinline src="' + esc(url) + '"></video></button>';
+      frameHtml =
+        '<div class="' + wrapClass + '">' +
+        '<s-clickable border="base" borderRadius="base" data-media-src="' + esc(url) + '" data-media-kind="video" data-media-name="' + esc(feature.name) + '" accessibilityLabel="Play preview of ' + esc(feature.name) + '">' +
+        '<video muted playsinline src="' + esc(url) + '"></video></s-clickable></div>';
     } else {
-      frameHtml = '<button type="button" class="fdt-hf__frame" data-media-src="' + esc(url) + '" data-media-kind="' + kind + '" data-media-name="' + esc(feature.name) + '" aria-label="Play preview of ' + esc(feature.name) + '"><img alt="' + esc(feature.name) + '" src="' + esc(url) + '"></button>';
+      frameHtml =
+        '<div class="' + wrapClass + '">' +
+        '<s-clickable border="base" borderRadius="base" data-media-src="' + esc(url) + '" data-media-kind="' + kind + '" data-media-name="' + esc(feature.name) + '" accessibilityLabel="Play preview of ' + esc(feature.name) + '">' +
+        '<s-image alt="' + esc(feature.name) + '" src="' + esc(url) + '" aspectRatio="16/9" objectFit="cover" inlineSize="fill"></s-image></s-clickable></div>';
     }
-    var action = showView
-      ? '<button type="button" class="fdt-hf__primary" data-view-code="' + esc(feature.code) + '">View Feature</button>'
-      : "";
-    return frameHtml + '<div class="fdt-hf__bar"><p class="fdt-hf__name">' + esc(feature.name) + "</p>" + action + "</div>";
+    if (!showView) return frameHtml;
+    return (
+      '<s-stack gap="base">' + frameHtml +
+      '<s-stack direction="inline" justifyContent="end">' +
+      '<s-button type="button" variant="primary" data-view-code="' + esc(feature.code) + '">View Feature</s-button>' +
+      "</s-stack></s-stack>"
+    );
   }
 
   function createWidget(tabsEl, bodyEl, options) {
@@ -201,9 +251,48 @@
       timer = null;
     }
 
+    function canAutoAdvance() {
+      return !!(options.autoplay && !hovering && !modalOpen && mode === "highlight" && root && !root.hidden);
+    }
+
+    // Image / empty: SLIDE_MS. Short video: advance on ended. Long video: cut at SLIDE_MS.
     function armTimer() {
       stopTimer();
-      if (!options.autoplay || hovering || modalOpen || mode !== "highlight" || !root || root.hidden) return;
+      if (!canAutoAdvance()) return;
+      var slide = current();
+      var url = slide && (slide.feature.media || slide.feature.thumbnail);
+      var kind = mediaKind(url);
+      if (kind === "video") {
+        var video = bodyEl.querySelector("video");
+        if (!video) {
+          timer = setTimeout(advance, SLIDE_MS);
+          return;
+        }
+        if (video.ended) {
+          advance();
+          return;
+        }
+        function scheduleFromDuration() {
+          if (!canAutoAdvance() || !video.isConnected) return;
+          var durMs = video.duration * 1000;
+          if (!isFinite(durMs) || durMs <= 0) {
+            stopTimer();
+            timer = setTimeout(advance, SLIDE_MS);
+            return;
+          }
+          // Short clip: clear fallback timer and wait for ended (hooked in playMedia).
+          // Long clip: cut at SLIDE_MS.
+          stopTimer();
+          if (durMs > SLIDE_MS) timer = setTimeout(advance, SLIDE_MS);
+        }
+        if (video.readyState >= 1 && isFinite(video.duration) && video.duration > 0) {
+          scheduleFromDuration();
+        } else {
+          video.addEventListener("loadedmetadata", scheduleFromDuration, { once: true });
+          timer = setTimeout(advance, SLIDE_MS);
+        }
+        return;
+      }
       timer = setTimeout(advance, SLIDE_MS);
     }
 
@@ -213,6 +302,11 @@
       var video = bodyEl.querySelector("video");
       if (video) {
         video.loop = false;
+        video.addEventListener("ended", function onEnded() {
+          stopTimer();
+          // Idle: advance to next feature. Not idle (hover/modal): keep last frame.
+          if (canAutoAdvance()) advance();
+        }, { once: true });
         var play = video.play();
         if (play && play.catch) play.catch(function () {});
       }
@@ -227,7 +321,7 @@
       list = slides();
       if (!list.length) {
         tabsEl.innerHTML = "";
-        bodyEl.innerHTML = '<p class="fdt-hf__note">No highlight features to show yet.</p>';
+        bodyEl.innerHTML = '<s-paragraph color="subdued">No highlight features to show yet.</s-paragraph>';
         stopTimer();
         return;
       }
@@ -238,18 +332,26 @@
       });
       tabsEl.innerHTML = visibleGroups.map(function (group) {
         var on = group.code === slide.group.code;
-        return '<button type="button" class="fdt-hf__tab" role="tab" data-group="' + esc(group.code) + '" aria-selected="' + on + '">' + esc(group.name) + "</button>";
+        return '<s-button type="button" variant="' + (on ? "primary" : "secondary") + '" data-group="' + esc(group.code) + '" role="tab" aria-selected="' + on + '">' + esc(group.name) + "</s-button>";
       }).join("");
       var kids = childrenOf(slide.group.code);
       var showView = options.alwaysView || indexed();
       if (!kids.length) {
-        bodyEl.innerHTML = '<div class="fdt-hf__solo"><div class="fdt-hf__stage">' + previewHtml(slide, showView) + "</div></div>";
+        bodyEl.innerHTML = previewHtml(slide, showView, "solo");
       } else {
         var rows = kids.map(function (feature) {
           var on = feature.code === slide.feature.code;
-          return '<button type="button" class="fdt-hf__feature" data-feature="' + esc(feature.code) + '" aria-current="' + on + '">' + esc(feature.name) + "</button>";
+          return (
+            '<s-clickable padding="base"' + (on ? ' background="subdued"' : "") + ' data-feature="' + esc(feature.code) + '" aria-current="' + on + '">' +
+            '<s-text type="strong">' + esc(feature.name) + "</s-text></s-clickable>"
+          );
         }).join("");
-        bodyEl.innerHTML = '<div class="fdt-hf__split"><div class="fdt-hf__list">' + rows + '</div><div class="fdt-hf__stage">' + previewHtml(slide, showView) + "</div></div>";
+        bodyEl.innerHTML =
+          '<s-grid gridTemplateColumns="0.38fr 0.62fr" gap="base" alignItems="start">' +
+          '<s-box border="base" borderRadius="base">' +
+          '<s-stack gap="none">' + rows + "</s-stack></s-box>" +
+          "<div>" + previewHtml(slide, showView, "group") + "</div>" +
+          "</s-grid>";
       }
       playMedia(slide);
       if (reason === "auto_slide") {
@@ -259,7 +361,7 @@
     }
 
     function advance() {
-      if (!options.autoplay || hovering || modalOpen || !list.length) return;
+      if (!canAutoAdvance() || !list.length) return;
       index = (index + 1) % list.length;
       render("auto_slide");
     }
@@ -314,16 +416,22 @@
       if (feature) selectFeature(feature.getAttribute("data-feature"));
     });
     bodyEl.addEventListener("mouseover", function (event) {
-      if (!options.autoplay || !event.target.closest(".fdt-hf__frame")) return;
+      if (!options.autoplay || !event.target.closest(".fdt-hf__media")) return;
       hovering = true;
       stopTimer();
     });
     bodyEl.addEventListener("mouseout", function (event) {
       if (!hovering) return;
-      var frameEl = event.target.closest ? event.target.closest(".fdt-hf__frame") : null;
+      var frameEl = event.target.closest ? event.target.closest(".fdt-hf__media") : null;
       if (!frameEl) return;
       if (event.relatedTarget && frameEl.contains(event.relatedTarget)) return;
       hovering = false;
+      // If the short video already finished while hovering, move on immediately.
+      var video = bodyEl.querySelector("video");
+      if (video && video.ended) {
+        advance();
+        return;
+      }
       armTimer();
     });
 
@@ -348,7 +456,6 @@
   function openMedia(url, kind, name) {
     if (!url || !pageWidget) return;
     pageWidget.pauseForModal();
-    mediaTitle.textContent = "Preview";
     mediaStage.innerHTML = "";
     if (kind === "video") {
       var video = document.createElement("video");
@@ -362,12 +469,16 @@
       var play = video.play();
       if (play && play.catch) play.catch(function () {});
     } else {
-      var image = document.createElement("img");
-      image.src = url;
-      image.alt = name || "";
+      var image = document.createElement("s-image");
+      image.setAttribute("src", url);
+      image.setAttribute("alt", name || "");
+      image.setAttribute("aspectRatio", "16/9");
+      image.setAttribute("objectFit", "cover");
+      image.setAttribute("inlineSize", "fill");
       mediaStage.appendChild(image);
     }
-    mediaModal.hidden = false;
+    if (typeof mediaModal.showOverlay === "function") mediaModal.showOverlay();
+    else mediaModal.removeAttribute("hidden");
     if (mode === "home") {
       page.hidden = true;
       advanced.hidden = true;
@@ -377,7 +488,11 @@
   }
 
   function closeMedia() {
-    mediaModal.hidden = true;
+    if (typeof mediaModal.hideOverlay === "function") mediaModal.hideOverlay();
+    else mediaModal.setAttribute("hidden", "");
+  }
+
+  function onMediaHidden() {
     mediaStage.innerHTML = "";
     if (pageWidget) pageWidget.resumeFromModal();
     if (mode === "home") root.hidden = true;
@@ -407,7 +522,8 @@
     page.hidden = false;
     advanced.hidden = true;
     closeMedia();
-    renderBanner();
+    // Default: restart indexing whenever the highlight screen opens.
+    resetIndex();
     pageWidget.show(reset);
     place();
   }
@@ -427,10 +543,35 @@
     place();
   }
 
+  function ensureHomeStyles(doc) {
+    if (doc.getElementById("fdt-hf-home-style")) return;
+    var style = doc.createElement("style");
+    style.id = "fdt-hf-home-style";
+    style.textContent =
+      "#fdt-hf-home .fdt-hf__media{box-sizing:border-box;width:100%;overflow:hidden}" +
+      "#fdt-hf-home .fdt-hf__media--group{aspect-ratio:16/10;min-block-size:12rem;max-block-size:18rem}" +
+      "#fdt-hf-home .fdt-hf__media--solo{aspect-ratio:16/9;min-block-size:16rem;max-block-size:24rem}" +
+      "#fdt-hf-home .fdt-hf__media--empty{display:flex;align-items:center;justify-content:center;padding:1rem;" +
+      "border:1px dashed var(--p-color-border,#c9cccf);border-radius:.5rem;background:var(--p-color-bg-surface-secondary,#fafafa)}" +
+      "#fdt-hf-home .fdt-hf__media-label{color:var(--p-color-text-secondary,#616161);font-size:.8125rem;text-align:center}" +
+      "#fdt-hf-home .fdt-hf__media>s-clickable{display:block;width:100%;height:100%}" +
+      "#fdt-hf-home .fdt-hf__media video{display:block;width:100%;height:100%;object-fit:cover}";
+    doc.head.appendChild(style);
+  }
+
   function mountHomeCard() {
     if (!frame || !frame.contentDocument) return;
     var doc = frame.contentDocument;
-    if (doc.getElementById("fdt-hf-home")) {
+    ensureHomeStyles(doc);
+    var existing = doc.getElementById("fdt-hf-home");
+    if (existing) {
+      var wrap = existing.closest(".Polaris-Layout__Section");
+      if (!wrap) {
+        wrap = doc.createElement("div");
+        wrap.className = "Polaris-Layout__Section";
+        existing.parentNode.insertBefore(wrap, existing);
+        wrap.appendChild(existing);
+      }
       if (homeWidget) homeWidget.refresh();
       return;
     }
@@ -441,17 +582,18 @@
     var section = heading;
     while (section && !(section.classList && section.classList.contains("Polaris-Layout__Section"))) section = section.parentElement;
     if (!section || !section.parentNode) return;
-    if (!doc.getElementById("fdt-hf-home-style")) {
-      var style = doc.createElement("style");
-      style.id = "fdt-hf-home-style";
-      style.textContent = "#fdt-hf-home{margin:0 0 1rem;background:#fff;border:1px solid #e3e3e3;border-radius:0.5rem;color:#303030;font-family:Inter,sans-serif}#fdt-hf-home .fdt-hf__head{display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #f1f1f1}#fdt-hf-home .fdt-hf__title{margin:0;font-size:1rem}#fdt-hf-home .fdt-hf__tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:0.5rem;width:100%}#fdt-hf-home .fdt-hf__tab{padding:0.5rem 0.75rem;border:1px solid #e3e3e3;border-radius:0.5rem;background:#fff;font:inherit;font-size:0.8125rem;font-weight:650;cursor:pointer}#fdt-hf-home .fdt-hf__tab[aria-selected=true]{background:#303030;border-color:#303030;color:#fff}#fdt-hf-home .fdt-hf__split{display:flex}#fdt-hf-home .fdt-hf__list{width:38%;border-right:1px solid #f1f1f1}#fdt-hf-home .fdt-hf__feature{display:block;width:100%;padding:0.75rem 1rem;border:0;border-bottom:1px solid #f6f6f6;background:transparent;text-align:left;font:inherit;font-size:0.875rem;font-weight:650;cursor:pointer}#fdt-hf-home .fdt-hf__feature[aria-current=true]{background:#f3f3f3}#fdt-hf-home .fdt-hf__stage{width:62%;padding:1rem 1.25rem 1.25rem}#fdt-hf-home .fdt-hf__solo .fdt-hf__stage{width:100%}#fdt-hf-home .fdt-hf__frame{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:16/9;overflow:hidden;border:0;border-radius:0.5rem;background:#fafafa;padding:0;cursor:pointer}#fdt-hf-home .fdt-hf__frame--empty{border:1px dashed #c9cccf;cursor:default}#fdt-hf-home .fdt-hf__empty{display:flex;flex-direction:column;gap:0.25rem;padding:0.75rem;text-align:center;color:#616161}#fdt-hf-home .fdt-hf__empty strong{color:#303030;font-size:0.875rem}#fdt-hf-home .fdt-hf__empty span{font-size:0.75rem}#fdt-hf-home .fdt-hf__frame img,#fdt-hf-home .fdt-hf__frame video{width:100%;height:100%;object-fit:cover}#fdt-hf-home .fdt-hf__bar{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-top:0.75rem}#fdt-hf-home .fdt-hf__name{margin:0;font-size:0.875rem;font-weight:650}#fdt-hf-home .fdt-hf__primary{min-height:2.75rem;padding:0.5rem 1rem;border:0;border-radius:0.5rem;background:#303030;color:#fff;font:inherit;font-size:0.8125rem;cursor:pointer}#fdt-hf-home .fdt-hf__note{margin:0;padding:1rem 1.25rem;color:#616161;font-size:0.8125rem}@media (max-width:47.99rem){#fdt-hf-home .fdt-hf__split{flex-direction:column}#fdt-hf-home .fdt-hf__list,#fdt-hf-home .fdt-hf__stage{width:100%}#fdt-hf-home .fdt-hf__list{display:flex;overflow:auto;border-right:0;border-bottom:1px solid #f1f1f1}#fdt-hf-home .fdt-hf__feature{width:auto;white-space:nowrap}}";
-      doc.head.appendChild(style);
-    }
-    var card = doc.createElement("div");
+    var wrap = doc.createElement("div");
+    wrap.className = "Polaris-Layout__Section";
+    var card = doc.createElement("s-section");
     card.id = "fdt-hf-home";
-    card.className = "Polaris-Layout__Section";
-    card.innerHTML = '<section aria-label="Highlight features"><div class="fdt-hf__head"><h2 class="fdt-hf__title">Highlight features</h2><div id="fdt-hf-home-tabs" class="fdt-hf__tabs" role="tablist" aria-label="Feature groups"></div></div><div id="fdt-hf-home-body"></div></section>';
-    section.parentNode.insertBefore(card, section);
+    card.setAttribute("heading", "Highlight features");
+    card.innerHTML =
+      '<s-stack gap="base">' +
+      '<s-stack id="fdt-hf-home-tabs" direction="inline" gap="small" alignItems="center" role="tablist" aria-label="Feature groups"></s-stack>' +
+      '<div id="fdt-hf-home-body"></div>' +
+      "</s-stack>";
+    wrap.appendChild(card);
+    section.parentNode.insertBefore(wrap, section);
     homeWidget = createWidget(doc.getElementById("fdt-hf-home-tabs"), doc.getElementById("fdt-hf-home-body"), {
       source: "homepage",
       autoplay: false,
@@ -503,6 +645,7 @@
   });
 
   document.getElementById("fdt-hf-home").addEventListener("click", function () {
+    if (!indexed()) return;
     localStorage.setItem(KEY.continueClicked, "true");
     track("highlight_continue_clicked", {
       source: "highlight_page",
@@ -511,11 +654,10 @@
     });
     showHome();
   });
-  mediaModal.addEventListener("click", function (event) {
-    if (event.target.closest("[data-close=media]")) closeMedia();
-  });
+  mediaModal.addEventListener("hide", onMediaHidden);
+  mediaModal.addEventListener("afterhide", onMediaHidden);
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && !mediaModal.hidden) closeMedia();
+    if (event.key === "Escape" && mediaModal && !mediaModal.hasAttribute("hidden")) closeMedia();
   });
   window.addEventListener("popstate", function (event) {
     if (event.state && event.state.findterHighlightBack) {
@@ -525,18 +667,67 @@
     restoreBack();
   });
   window.addEventListener("resize", place);
-  if (welcome) new MutationObserver(function () { present(true); }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  if (welcome) {
+    new MutationObserver(function () {
+      if (welcomeOpen()) {
+        root.hidden = true;
+        if (pageWidget) pageWidget.stop();
+        return;
+      }
+      // Continue / X / Esc on welcome banner → Highlight Features (not homepage).
+      localStorage.removeItem(KEY.continueClicked);
+      sessionStorage.removeItem(SESSION_HIDE);
+      showHighlight(true);
+    }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  }
   if (frame) frame.addEventListener("load", function () { if (mode === "home") mountHomeCard(); });
 
-  if (!indexed() && !indexTimer) {
+  function startIndexTimer() {
+    if (indexTimer) clearTimeout(indexTimer);
+    indexTimer = null;
+    if (indexed()) return;
     indexTimer = setTimeout(function () {
       localStorage.setItem(KEY.indexCompletedAt, String(Date.now()));
+      indexTimer = null;
       if (mode === "highlight") {
         renderBanner();
-        pageWidget.refresh();
+        if (pageWidget) pageWidget.refresh();
       }
       if (mode === "home" && homeWidget) homeWidget.refresh();
     }, INDEX_MS);
   }
+
+  function resetIndex() {
+    localStorage.removeItem(KEY.indexCompletedAt);
+    if (mode === "highlight") {
+      renderBanner();
+      if (pageWidget) pageWidget.refresh();
+    }
+    if (mode === "home" && homeWidget) homeWidget.refresh();
+    startIndexTimer();
+  }
+
+  function forceShowHighlight() {
+    localStorage.removeItem(KEY.continueClicked);
+    localStorage.removeItem(KEY.viewFeature);
+    localStorage.removeItem(KEY.expired);
+    sessionStorage.removeItem(SESSION_HIDE);
+    if (welcome && !welcome.hidden && window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
+      window.FindterWelcome.hide();
+    } else if (welcome) {
+      welcome.hidden = true;
+    }
+    showHighlight(true);
+  }
+
+  window.FindterHighlight.show = forceShowHighlight;
+  window.FindterHighlight.hide = function () {
+    root.hidden = true;
+    if (pageWidget) pageWidget.stop();
+  };
+  window.FindterHighlight.resetIndex = resetIndex;
+  window.FindterHighlight.getIndexMs = function () { return INDEX_MS; };
+
+  if (!indexed()) startIndexTimer();
   present(true);
 })();

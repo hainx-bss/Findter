@@ -1,36 +1,32 @@
 <div id=fdt-hf class=fdt-hf hidden>
 <div id=fdt-hf-page class=fdt-hf__page>
-<header class=fdt-hf__intro>
-<h1>Discover Findter</h1>
-<p>Look through the features below while your store data is collected.</p>
-</header>
-<div id=fdt-hf-banner class=fdt-hf__banner></div>
-<section class=fdt-hf__card aria-label="Highlight features">
-<div class=fdt-hf__head>
-<div>
-<h2 class=fdt-hf__title>Highlight features</h2>
-<p class=fdt-hf__lead>Choose a group, then preview a feature.</p>
+<s-stack gap=large>
+<s-stack gap=small>
+<s-heading>Discover Findter</s-heading>
+<s-paragraph color=subdued>Look through the features below while your store data is collected.</s-paragraph>
+</s-stack>
+<s-banner id=fdt-hf-banner heading="Collecting data" tone=warning>Up-to-date data are being collected. Please wait until this process is complete before continuing with the app.</s-banner>
+<s-section heading="Highlight features">
+<s-stack gap=base>
+<s-paragraph color=subdued>Choose a group, then preview a feature.</s-paragraph>
+<s-stack id=fdt-hf-tabs direction=inline gap=small alignItems=center role=tablist aria-label="Feature groups"></s-stack>
+<div id=fdt-hf-body></div>
+</s-stack>
+</s-section>
+<div id=fdt-hf-continue hidden>
+<s-stack direction=inline justifyContent=end>
+<s-button type=button id=fdt-hf-home variant=primary>Continue to Homepage</s-button>
+</s-stack>
 </div>
-<div id=fdt-hf-tabs class=fdt-hf__tabs role=tablist aria-label="Feature groups"></div>
+</s-stack>
 </div>
-<div id=fdt-hf-body class=fdt-hf__body></div>
-</section>
-<div id=fdt-hf-continue class=fdt-hf__continue hidden>
-<button type=button id=fdt-hf-home class=fdt-hf__primary>Continue to Homepage</button>
+<div id=fdt-hf-advanced class=fdt-hf__page hidden>
+<s-section heading="Advanced features">
+<s-box id=fdt-hf-advanced-focus border=base borderRadius=base padding=base background=subdued></s-box>
+</s-section>
 </div>
-</div>
-<div id=fdt-hf-advanced class=fdt-hf__advanced hidden>
-<h1>Advanced features</h1>
-<p id=fdt-hf-advanced-focus class=fdt-hf__focus></p>
-</div>
-<div id=fdt-hf-media class=fdt-hf__modal hidden>
-<button type=button class=fdt-hf__backdrop data-close=media aria-label="Close preview"></button>
-<div class=fdt-hf__dialog role=dialog aria-modal=true aria-labelledby=fdt-hf-media-title>
-<div class=fdt-hf__dialog-head>
-<h2 id=fdt-hf-media-title>Preview</h2>
-<button type=button class=fdt-hf__x data-close=media aria-label=Close>&times;</button>
-</div>
-<div id=fdt-hf-media-stage class=fdt-hf__stage></div>
-</div>
-</div>
+<s-modal id=fdt-hf-media heading=Preview size=large>
+<div id=fdt-hf-media-stage class=fdt-hf__media-stage></div>
+<s-button slot=secondary-actions commandFor=fdt-hf-media command=--hide>Close</s-button>
+</s-modal>
 </div>

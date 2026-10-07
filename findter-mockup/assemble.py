@@ -179,7 +179,8 @@ def split(monolith: str) -> None:
     )
     links += (
         '\n<link rel=stylesheet href="components/welcome-banner/welcome.css">'
-        '\n<link rel=stylesheet href="components/highlight-features/highlight.css">'
+        '\n<link rel=stylesheet href="components/highlight-features/highlight.css?v=3">'
+        '\n<link rel=stylesheet href="components/mockup-cases/mockup-cases.css">'
     )
     head = head.replace(
         "style-src 'unsafe-inline'",
@@ -316,10 +317,40 @@ def split(monolith: str) -> None:
 
 def build() -> None:
     head = (ROOT / "admin" / "document-head.html").read_text(encoding="utf-8")
+    # Live s-* on the parent highlight overlay needs polaris.js from the Shopify CDN.
+    if "https://cdn.shopify.com" not in head.split("script-src", 1)[-1].split(";", 1)[0]:
+        head = head.replace(
+            "script-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' https://cdn.shopify.com",
+            1,
+        ).replace(
+            "script-src 'self' 'unsafe-inline' data:",
+            "script-src 'self' 'unsafe-inline' data: https://cdn.shopify.com",
+            1,
+        )
+    head = head.replace(
+        'href="components/highlight-features/highlight.css"',
+        'href="components/highlight-features/highlight.css?v=7"',
+    )
     before = (ROOT / "admin" / "chrome" / "before-frame.html").read_text(encoding="utf-8")
     after = (ROOT / "admin" / "chrome" / "after-frame.html").read_text(encoding="utf-8")
     welcome = (ROOT / "components" / "welcome-banner" / "welcome.html").read_text(encoding="utf-8")
     highlight = (ROOT / "components" / "highlight-features" / "highlight.html").read_text(encoding="utf-8")
+    master = (ROOT / "components" / "master" / "master.html").read_text(encoding="utf-8")
+    head = head.replace(
+        'href="components/highlight-features/highlight.css"',
+        'href="components/highlight-features/highlight.css?v=7"',
+    ).replace(
+        'href="components/master/master.css"',
+        'href="components/master/master.css?v=1"',
+    )
+    if "components/master/master.css" not in head:
+        head = head.replace(
+            'href="components/highlight-features/highlight.css?v=7"',
+            'href="components/highlight-features/highlight.css?v=7"\n'
+            '<link rel=stylesheet href="components/master/master.css?v=1">',
+            1,
+        )
     index = (
         head
         + "\n"
@@ -329,8 +360,12 @@ def build() -> None:
         + after
         + welcome
         + highlight
-        + '<script src="components/welcome-banner/welcome.js"></script>\n'
-        + '<script src="components/highlight-features/highlight.js"></script>\n'
+        + master
+        + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
+        + '<script src="components/welcome-banner/welcome.js?v=3"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=16"></script>\n'
+        + '<script src="components/master/master.js?v=1"></script>\n'
+        + '<script src="components/mockup-cases/mockup-cases.js?v=9"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)
@@ -346,12 +381,19 @@ def build() -> None:
         encoding="utf-8"
     )
     review_js = (ROOT / "components" / "review-banner" / "review.js").read_text(encoding="utf-8")
+    theme = (ROOT / "components" / "theme-compatibility" / "theme.html").read_text(encoding="utf-8")
     home = "\n".join(chunks).replace("<!--APP_STYLES-->", "\n".join(styles), 1)
     home = home.replace("<!--REVIEW_BANNER-->", review_banner, 1)
     home = home.replace(
         "<!--REVIEW_SCRIPT-->",
         "<script>\n" + review_js.strip() + "\n</script>",
         1,
+    )
+    home = (
+        home.rstrip()
+        + "\n"
+        + theme
+        + '\n<script src="../components/theme-compatibility/theme.js?v=9"></script>\n'
     )
     write(ROOT / "app" / "home.html", home)
 
