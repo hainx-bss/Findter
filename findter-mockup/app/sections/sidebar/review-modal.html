@@ -1,0 +1,45 @@
+<!-- Feedback modal (UI-02) -->
+<s-modal id="fdt-feedback-modal" accessibilityLabel="How can we help you?" heading="How can we help you?">
+  <s-stack gap="base" paddingBlock="small">
+    <s-text color="subdued">Fill in the details below and our support team will respond directly in this chat.</s-text>
+
+    <s-banner id="fdt-feedback-error" tone="critical" hidden>
+      Couldn't send. Check your connection and try again.
+    </s-banner>
+
+    <s-select id="fdt-feedback-category" label="Category" name="category" value="something_isnt_working">
+      <s-option value="something_isnt_working">Something isn't working</s-option>
+      <s-option value="cant_find">I can't find what I'm looking for</s-option>
+      <s-option value="order_issue">Issue with my order</s-option>
+      <s-option value="payment">Payment or billing problem</s-option>
+      <s-option value="shipping">Shipping or delivery question</s-option>
+      <s-option value="return">Return or refund request</s-option>
+      <s-option value="confusing">Confusing to use</s-option>
+      <s-option value="feature">Feature suggestion</s-option>
+      <s-option value="slow">App is slow</s-option>
+      <s-option value="other">Other</s-option>
+    </s-select>
+
+    <s-text-area
+      id="fdt-feedback-message"
+      label="Tell us more"
+      labelAccessibilityVisibility="visible"
+      details="Optional"
+      placeholder="Please describe your issue or feedback as much detail as possible. The more you share, the better help we can do!"
+      rows="4"
+    ></s-text-area>
+
+    <s-stack gap="small">
+      <s-text>Add a screenshot (optional)</s-text>
+      <input id="fdt-feedback-file" type="file" accept="image/*" multiple>
+    </s-stack>
+  </s-stack>
+
+  <s-button slot="secondary-actions" id="fdt-feedback-never-mind" commandFor="fdt-feedback-modal" command="--hide">
+    Never mind
+  </s-button>
+  <s-button slot="primary-action" id="fdt-feedback-send" variant="primary">
+    Send to support
+  </s-button>
+</s-modal>
+<!--REVIEW_SCRIPT-->

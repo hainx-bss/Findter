@@ -1,0 +1,35 @@
+<!-- Review / feedback banner (UI-01, UI-03) -->
+<div id="fdt-review-root" class="fdt-review" hidden data-fdt-review-root>
+  <div class="fdt-review__card fdt-review__card--thumbs" data-view="thumbs" hidden>
+    <button type="button" class="fdt-review__dismiss" data-action="dismiss-banner" aria-label="Dismiss">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <p class="fdt-review__heading">How's Findter working for you so far?</p>
+    <div class="fdt-review__thumbs" role="group" aria-label="Review or send feedback">
+      <button type="button" class="fdt-review__thumb fdt-review__thumb--up" data-action="review-path" data-hover="thumbs_up" aria-label="Leave a review">
+        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f44d.png" alt="" width="40" height="40" draggable="false">
+      </button>
+      <button type="button" class="fdt-review__thumb fdt-review__thumb--down" data-action="feedback-path" data-hover="thumbs_down" aria-label="Send feedback">
+        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f44e.png" alt="" width="40" height="40" draggable="false">
+      </button>
+    </div>
+  </div>
+
+  <div class="fdt-review__card fdt-review__card--thanks" data-view="thanks" hidden>
+    <s-stack direction="inline" gap="small" alignItems="center">
+      <img class="fdt-review__party" src="https://cdn.shopify.com/s/files/1/0765/0302/3847/files/partying_face_3d.png?v=1787908953" alt="" width="28" height="28">
+      <s-text>Thank you so much for your valuable feedbacks!</s-text>
+    </s-stack>
+  </div>
+
+  <button type="button" class="fdt-review__card fdt-review__card--feedback" data-view="feedback" data-action="open-feedback-banner" hidden>
+    <span class="fdt-review__feedback-icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path d="M10 2a8 8 0 0 0-8 8v5.5A1.5 1.5 0 0 0 3.5 17H6v1.5a.5.5 0 0 0 .8.4L10.5 16H16.5A1.5 1.5 0 0 0 18 14.5V10a8 8 0 0 0-8-8Z"/></svg>
+    </span>
+    <span class="fdt-review__feedback-copy">
+      <span class="fdt-review__feedback-title">Have feedback for us?</span>
+      <span class="fdt-review__feedback-sub">Let us know how we can improve Findter.</span>
+    </span>
+    <span class="fdt-review__feedback-arrow" aria-hidden="true">→</span>
+  </button>
+</div>

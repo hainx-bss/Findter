@@ -7,6 +7,14 @@ alwaysApply: true
 
 This repo is a static Shopify-admin mockup for Findter Filter & Search, not an embedded Remix app. Mockup files live under `findter-mockup/`. `Findter.html` redirects to `index.html`. `python3 findter-mockup/assemble.py` rebuilds `index.html` and `app/home.html` from the parts.
 
+## CDN (this mockup)
+
+App Home (`findter-mockup/app/`, assembled into `app/home.html`) loads live Polaris 2.0 RC:
+
+`https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js`
+
+Add that script in the app iframe `<head>` only (see `app/shell.html`). Do not load `polaris.js` or `polaris-1.js` alongside it. Do not add it to the frozen admin chrome parent page.
+
 ## App UI
 
 Use public Polaris web components (`s-*`) for app UI content. The tags are global. Do not import `@shopify/polaris`, `@shopify/polaris-react`, or `@shopify/polaris-web-components`. Add `@shopify/polaris-types` only when a file needs types.
@@ -46,9 +54,9 @@ The current pages are a SingleFile snapshot. They do not load a Polaris `<script
 
 When new markup must register live `s-*` elements, add exactly one script in that document's `<head>`:
 
-`https://cdn.shopify.com/shopifycloud/polaris.js`
+`https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js`
 
-That unversioned URL tracks stable Polaris 1.x. The versioned channel is `https://cdn.shopify.com/shopifycloud/polaris-1.js`. Do not load both. Do not add either script to the frozen snapshot unless the new markup needs live components. Do not copy shadow-root CSS out of the snapshot to imitate a component.
+This mockup uses the Polaris 2.0 RC channel (see `app/shell.html`). Do not load `polaris.js` or `polaris-1.js` alongside it. Do not add the script to the frozen admin chrome parent page. Do not copy shadow-root CSS out of the snapshot to imitate a component.
 
 ## Styling and copy
 

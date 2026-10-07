@@ -27,4 +27,4 @@ Site URL (after first successful deploy): https://hainx-bss.github.io/Findter/
 
 ## Cursor / Polaris
 
-Project rules live in `.cursor/rules/` (see `AGENTS.md`). App UI should use Polaris web components (`s-*`).
+Project rules live in `.cursor/rules/` (see `AGENTS.md`). App UI should use Polaris web components (`s-*`). App Home iframe loads Polaris 2.0 RC: `https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js` (see `findter-mockup/app/shell.html`). Rebuild with `python3 findter-mockup/assemble.py`.

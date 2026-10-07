@@ -27,6 +27,7 @@ APP_PARTS = [
     "sections/sidebar/app-status.html",
     "sections/sidebar/help-and-support.html",
     "sections/sidebar/sync-updates.html",
+    "sections/sidebar/review-modal.html",
 ]
 
 APP_STYLES = [
@@ -56,6 +57,7 @@ IFRAME = (
     'border-color:currentcolor;border-image:none;width:100%;flex:1 1 0%;display:flex" '
     'sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation allow-same-origin"></iframe>'
 )
+
 
 
 def style_blocks(html: str, limit: int | None = None) -> list[tuple[int, int, str]]:
@@ -375,8 +377,18 @@ def build() -> None:
     chunks = []
     for name in APP_PARTS:
         chunks.append((ROOT / "app" / name).read_text(encoding="utf-8"))
+    review_banner = (ROOT / "app" / "sections" / "sidebar" / "review-banner.html").read_text(
+        encoding="utf-8"
+    )
+    review_js = (ROOT / "components" / "review-banner" / "review.js").read_text(encoding="utf-8")
     theme = (ROOT / "components" / "theme-compatibility" / "theme.html").read_text(encoding="utf-8")
     home = "\n".join(chunks).replace("<!--APP_STYLES-->", "\n".join(styles), 1)
+    home = home.replace("<!--REVIEW_BANNER-->", review_banner, 1)
+    home = home.replace(
+        "<!--REVIEW_SCRIPT-->",
+        "<script>\n" + review_js.strip() + "\n</script>",
+        1,
+    )
     home = (
         home.rstrip()
         + "\n"
