@@ -19,6 +19,15 @@
     }
   }
 
+  function reviewApi() {
+    var frame = document.querySelector("iframe[name=app-iframe]");
+    try {
+      return frame && frame.contentWindow && frame.contentWindow.FindterReview;
+    } catch (error) {
+      return null;
+    }
+  }
+
   function renderMenu() {
     menu.innerHTML =
       '<p class="fdt-mockup-menu__label">Mockup cases</p>' +
@@ -30,6 +39,7 @@
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor-empty">View Theme Editor (no selectors)</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor-fail">View Theme Editor (wrong selector)</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-fix">Reset Fix it yourself</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-review">Reset review</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-index">Reset index</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-chat">Reset chat</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-support-theme">Reset support theme</button>';
@@ -110,6 +120,11 @@
         localStorage.removeItem("findter.theme.fix.v1");
         localStorage.removeItem("findter.theme.supportFromFix.v1");
       } catch (error) {}
+      return;
+    }
+    if (name === "reset-review") {
+      var reviewReset = reviewApi();
+      if (reviewReset && typeof reviewReset.reset === "function") reviewReset.reset();
       return;
     }
     if (name === "reset-index") {

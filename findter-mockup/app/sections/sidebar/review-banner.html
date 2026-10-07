@@ -2,15 +2,27 @@
 <div id="fdt-review-root" class="fdt-review" hidden data-fdt-review-root>
   <div class="fdt-review__card fdt-review__card--thumbs" data-view="thumbs" hidden>
     <button type="button" class="fdt-review__dismiss" data-action="dismiss-banner" aria-label="Dismiss">
-      <span aria-hidden="true">&times;</span>
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
     <p class="fdt-review__heading">How's Findter working for you so far?</p>
     <div class="fdt-review__thumbs" role="group" aria-label="Review or send feedback">
-      <button type="button" class="fdt-review__thumb fdt-review__thumb--up" data-action="review-path" data-hover="thumbs_up" aria-label="Leave a review">
-        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f44d.png" alt="" width="40" height="40" draggable="false">
+      <button type="button" class="fdt-review__thumb fdt-review__thumb--up" data-action="review-path" data-hover="thumbs_up" aria-label="Helpful" aria-pressed="false">
+        <span class="fdt-review__press" aria-hidden="true"><span class="fdt-review__press-fill"></span><span class="fdt-review__press-stroke"></span></span>
+        <span class="fdt-review__ico">
+          <span class="fdt-review__fx" aria-hidden="true">
+            <span class="fdt-review__ripple"></span>
+            <span class="fdt-review__sparks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </span>
+          <svg class="fdt-review__ico-outline" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+          <svg class="fdt-review__ico-filled" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+        </span>
       </button>
-      <button type="button" class="fdt-review__thumb fdt-review__thumb--down" data-action="feedback-path" data-hover="thumbs_down" aria-label="Send feedback">
-        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f44e.png" alt="" width="40" height="40" draggable="false">
+      <button type="button" class="fdt-review__thumb fdt-review__thumb--down" data-action="feedback-path" data-hover="thumbs_down" aria-label="Not helpful" aria-pressed="false">
+        <span class="fdt-review__press" aria-hidden="true"><span class="fdt-review__press-fill"></span><span class="fdt-review__press-stroke"></span></span>
+        <span class="fdt-review__ico">
+          <svg class="fdt-review__ico-outline" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+          <svg class="fdt-review__ico-filled" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+        </span>
       </button>
     </div>
   </div>
@@ -22,14 +34,16 @@
     </s-stack>
   </div>
 
-  <button type="button" class="fdt-review__card fdt-review__card--feedback" data-view="feedback" data-action="open-feedback-banner" hidden>
-    <span class="fdt-review__feedback-icon" aria-hidden="true">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path d="M10 2a8 8 0 0 0-8 8v5.5A1.5 1.5 0 0 0 3.5 17H6v1.5a.5.5 0 0 0 .8.4L10.5 16H16.5A1.5 1.5 0 0 0 18 14.5V10a8 8 0 0 0-8-8Z"/></svg>
-    </span>
-    <span class="fdt-review__feedback-copy">
-      <span class="fdt-review__feedback-title">Have feedback for us?</span>
-      <span class="fdt-review__feedback-sub">Let us know how we can improve Findter.</span>
-    </span>
-    <span class="fdt-review__feedback-arrow" aria-hidden="true">→</span>
-  </button>
+  <div class="fdt-review__card fdt-review__card--feedback" data-view="feedback" hidden>
+    <button type="button" class="fdt-review__dismiss" data-action="dismiss-feedback" aria-label="Dismiss">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
+    <p class="fdt-review__feedback-title">Have feedback for us?</p>
+    <button type="button" class="fdt-review__feedback-btn" data-action="open-feedback-banner">
+      <span class="fdt-review__feedback-btn-ico" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path d="M10 2a8 8 0 0 0-8 8v5.5A1.5 1.5 0 0 0 3.5 17H6v1.5a.5.5 0 0 0 .8.4L10.5 16H16.5A1.5 1.5 0 0 0 18 14.5V10a8 8 0 0 0-8-8Z"/></svg>
+      </span>
+      <span>Share feedback</span>
+    </button>
+  </div>
 </div>

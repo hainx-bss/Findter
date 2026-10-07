@@ -18,10 +18,7 @@
     { id: "1004", display_name: "Prestige Live Copy", schema_theme: "Prestige", theme_version: "10.0.0", live: false, last_saved: 3 },
     { id: "1005", display_name: "Warehouse Main", schema_theme: "Warehouse", theme_version: "4.0.0", live: false, last_saved: 2 }
   ];
-  var COLLAB_ASK = "To proceed, please send us your collaborator code. You can find it by going to:\nShopify Admin → Settings → Users and permissions → Security → Store security → Collaborators — your code will be displayed there.\n\nOnce we receive your code, we’ll send a collaboration request. Please grant us access when it arrives.";
   var THANKS = "Thanks for providing the information. Our team has received your request and will get back to you as soon as possible.";
-  var CHECK_CODE = "Please check your code again. It needs to be 4 digits.";
-  var FALLBACK = "Our team has received your request and will get back to you as soon as possible.";
 
   var events = [];
   window.FindterTheme = { events: events, resetChat: null, resetSupportTheme: null };
@@ -38,12 +35,19 @@
   var chatField = document.getElementById("fdt-theme-chat-input");
   var crispLauncher = document.getElementById("fdt-crisp-launcher");
   var crispIcon = document.querySelector("#crisp-chatbox .cc-2gk6o");
+  var collabModal = document.getElementById("fdt-theme-collab");
+  var otpWrap = document.getElementById("fdt-theme-otp");
+  var collabSend = document.getElementById("fdt-theme-collab-send");
+  var collabChat = document.getElementById("fdt-theme-collab-chat");
+  var collabBack = document.getElementById("fdt-theme-collab-back");
+  var collabError = document.getElementById("fdt-theme-collab-error");
+  var collabTheme = null;
   var selected = null;
   var listState = "ready";
   var query = "";
   var loadTimer = null;
   var finishTimer = null;
-  var openIds = { choose: false, embed: false, editor: false, chat: false };
+  var openIds = { choose: false, embed: false, editor: false, collab: false, chat: false };
 
   function showOverlay(el) {
     if (!el) return;
@@ -80,6 +84,11 @@
   function now() { return new Date().toISOString(); }
   function indexed() { return !!localStorage.getItem(INDEX_KEY); }
   function indexingStatus() { return indexed() ? "completed" : "indexing"; }
+  // Phase 1 by default: "Fix it yourself" on Choose your theme is a Phase 2 element (UI-01).
+  function phase2() { return new URLSearchParams(location.search).get("phase") === "2"; }
+  // BR-05: a request only flips status when the Crisp send succeeds. ?crisp=fail models
+  // Crisp being blocked (adblocker) / failing to send → keep Get support, no status change.
+  function crispReady() { return new URLSearchParams(location.search).get("crisp") !== "fail"; }
 
   function parentEl(id) {
     try {
@@ -181,13 +190,6 @@
     };
   }
 
-  function fourDigits(text) {
-    // Accept first standalone 4-digit sequence (e.g. "3213", "code 3213").
-    // Reject 3 digits, 5+ digit runs ("321", "32135").
-    var found = String(text || "").match(/(?:^|[^\d])(\d{4})(?!\d)/);
-    return found ? found[1] : "";
-  }
-
   function esc(value) {
     return String(value || "").replace(/[&<>"']/g, function (char) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
@@ -245,6 +247,7 @@
     saveShop(seedShop());
     saveEmbed({});
     selected = null;
+    collabTheme = null;
     var issue = document.getElementById("fdt-theme-issue");
     if (issue) issue.remove();
     var button = document.querySelector("s-button[commandfor=modal-select-theme]");
@@ -257,9 +260,11 @@
     openIds.choose = false;
     openIds.embed = false;
     openIds.editor = false;
+    openIds.collab = false;
     hideOverlay(choose);
     hideOverlay(embed);
     hideOverlay(editor);
+    hideOverlay(collabModal);
   }
 
   function themes() {
@@ -296,23 +301,24 @@
     listEl.innerHTML =
       '<s-table>' +
       '<s-table-header-row>' +
-      '<s-table-header listSlot="primary">Theme</s-table-header>' +
-      '<s-table-header format="numeric">Status</s-table-header>' +
+      '<s-table-header listSlot="primary">Your theme</s-table-header>' +
+      '<s-table-header>Compatibility</s-table-header>' +
       '</s-table-header-row>' +
       '<s-table-body>' +
       rows.map(function (theme) {
         var status = compatibility(theme);
         var live = theme.live ? ' <s-badge tone="info">Live</s-badge>' : "";
+        // "Fix it yourself" belongs to Phase 2 only (UI-01); hidden by default.
+        var fixBtn = phase2()
+          ? '<s-button type="button" variant="secondary" data-fix-yourself="' + esc(theme.id) + '">Fix it yourself</s-button>'
+          : "";
         var action;
         if (status === "compatible") action = '<s-badge tone="success">Compatible</s-badge>';
         else if (status === "working_on_it") {
-          action =
-            '<s-button type="button" variant="secondary" data-fix-yourself="' + esc(theme.id) + '">Fix it yourself</s-button>' +
-            '<s-spinner accessibilityLabel="Working on it" size="base"></s-spinner>' +
-            '<s-badge tone="warning">Working on it</s-badge>';
+          // UI-04: plain warning badge only (no custom color / border / spinner).
+          action = fixBtn + '<s-badge tone="warning">Working on it</s-badge>';
         } else {
-          action =
-            '<s-button type="button" variant="secondary" data-fix-yourself="' + esc(theme.id) + '">Fix it yourself</s-button>' +
+          action = fixBtn +
             '<s-button type="button" variant="secondary" data-support="' + esc(theme.id) + '">Get support</s-button>';
         }
         var clickable = status === "compatible"
@@ -412,57 +418,197 @@
     }
   }
 
-  function requestSupport(theme) {
-    var status = compatibility(theme);
+  // One token-based stylesheet for the OTP boxes (a custom control — no s-* equivalent).
+  // Colors / spacing / radius come from Polaris tokens, never hard-coded values.
+  function ensureOtpStyle() {
+    if (document.getElementById("fdt-otp-style")) return;
+    var style = document.createElement("style");
+    style.id = "fdt-otp-style";
+    style.textContent =
+      ".fdt-otp{display:flex;justify-content:center;gap:var(--p-space-300,.75rem)}" +
+      ".fdt-otp-box{width:3.5rem;height:4rem;text-align:center;font-size:1.5rem;font-weight:600;" +
+      "font-variant-numeric:tabular-nums;color:var(--p-color-text,#303030);" +
+      "background:var(--p-color-input-bg-surface,#fdfdfd);" +
+      "border:var(--p-border-width-025,.0625rem) solid var(--p-color-input-border,#898f94);" +
+      "border-radius:var(--p-border-radius-200,.5rem);box-sizing:border-box;outline:none;" +
+      "transition:border-color .1s ease,box-shadow .1s ease,background .1s ease}" +
+      ".fdt-otp-box:hover{border-color:var(--p-color-input-border-hover,#616161)}" +
+      ".fdt-otp-box.is-filled{background:var(--p-color-bg-surface,#fff);border-color:var(--p-color-border-emphasis,#616161)}" +
+      ".fdt-otp-box:focus{border-color:var(--p-color-border-focus,#005bd3);" +
+      "box-shadow:0 0 0 var(--p-border-width-050,.125rem) var(--p-color-border-focus,#005bd3)}" +
+      ".fdt-otp-box:disabled{background:var(--p-color-bg-surface-disabled,#f7f7f7);color:var(--p-color-text-disabled,#b5b5b5);cursor:not-allowed}" +
+      ".fdt-otp.is-error .fdt-otp-box{border-color:var(--p-color-border-critical,#e51c00)}" +
+      ".fdt-otp.is-error .fdt-otp-box:focus{box-shadow:0 0 0 var(--p-border-width-050,.125rem) var(--p-color-border-critical,#e51c00)}" +
+      ".fdt-otp-error{display:flex;align-items:center;justify-content:center;gap:var(--p-space-100,.25rem);" +
+      "min-height:var(--p-space-500,1.25rem);font-size:var(--p-font-size-325,.8125rem);" +
+      "color:var(--p-color-text-critical,#e51c00)}" +
+      ".fdt-otp-error:empty{display:none}" +
+      ".fdt-infobox{display:flex;align-items:flex-start;gap:var(--p-space-200,.5rem)}" +
+      ".fdt-infobox__icon{flex:0 0 auto;display:inline-flex;width:1.25rem;height:1.25rem;line-height:0}" +
+      ".fdt-infobox__body{display:flex;flex-direction:column;gap:var(--p-space-100,.25rem);min-width:0}";
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function otpValue() {
+    if (!otpWrap) return "";
+    return Array.prototype.slice
+      .call(otpWrap.querySelectorAll("[data-otp]"))
+      .map(function (box) { return (box.value || "").replace(/\D/g, ""); })
+      .join("");
+  }
+
+  function setCollabError(message) {
+    if (collabError) {
+      collabError.innerHTML = message
+        ? '<s-icon type="alert-triangle" tone="critical"></s-icon><span>' + esc(message) + "</span>"
+        : "";
+    }
+    if (otpWrap) {
+      if (message) otpWrap.classList.add("is-error");
+      else otpWrap.classList.remove("is-error");
+    }
+  }
+
+  // Standard Polaris/App Bridge toast. This static mockup has no App Bridge runtime, so the
+  // call is a no-op here (guarded) — we do not build a fake toast (polaris-ui rule).
+  function showToast(message) {
+    try {
+      if (window.shopify && window.shopify.toast) window.shopify.toast.show(message);
+    } catch (error) {}
+  }
+
+  function setLoading(el, on) {
+    if (!el) return;
+    if (on) el.setAttribute("loading", "");
+    else el.removeAttribute("loading");
+  }
+
+  function updateSendState() {
+    // BR-09: Send to Crisp active only once all 4 OTP digits are entered.
+    setDisabled(collabSend, otpValue().length !== 4);
+  }
+
+  function markFilled(box) {
+    if (box) box.classList.toggle("is-filled", !!box.value);
+  }
+
+  function fillOtp(digits) {
+    var boxes = otpWrap ? otpWrap.querySelectorAll("[data-otp]") : [];
+    for (var i = 0; i < boxes.length; i++) {
+      boxes[i].value = digits.charAt(i) || "";
+      markFilled(boxes[i]);
+    }
+    var next = boxes[Math.min(digits.length, boxes.length - 1)];
+    if (next && typeof next.focus === "function") next.focus();
+    updateSendState();
+  }
+
+  function renderOtp() {
+    if (!otpWrap) return;
+    ensureOtpStyle();
+    otpWrap.classList.remove("is-error");
+    otpWrap.innerHTML = [0, 1, 2, 3].map(function (i) {
+      return '<input class="fdt-otp-box" data-otp="' + i + '" type="text" inputmode="numeric" ' +
+        'autocomplete="one-time-code" maxlength="1" aria-label="Collaborator code digit ' + (i + 1) + '">';
+    }).join("");
+    updateSendState();
+    var first = otpWrap.querySelector("[data-otp]");
+    if (first && typeof first.focus === "function") setTimeout(function () { first.focus(); }, 50);
+  }
+
+  // AF1 — Get support: fire ET-03 and open the in-app Enter collaborator code modal.
+  // Does NOT open Crisp and does NOT change status at this step (BR-05).
+  function openCollab(theme) {
     track("theme_make_compatible_clicked", Object.assign({
       source: "homepage",
       theme_status: "make_compatible"
     }, themeFields(theme)));
-    if (status === "working_on_it") {
-      track("theme_make_compatible_blocked", Object.assign({
-        source: "homepage",
-        block_reason: "working_on_it"
-      }, themeFields(theme)));
+    // BR-06: Working on it already has an open request.
+    if (compatibility(theme) === "working_on_it") return;
+    collabTheme = theme;
+    closeAll();
+    openIds.collab = true;
+    setCollabError("");
+    setLoading(collabSend, false);
+    renderOtp();
+    showOverlay(collabModal);
+  }
+
+  // AF2 — Send to Crisp: only a successful send flips the status (BR-05).
+  function sendToCrisp() {
+    if (!collabTheme || collabSend.hasAttribute("loading")) return;
+    var theme = collabTheme;
+    var code = otpValue();
+    if (code.length !== 4) {
+      setCollabError("Enter all 4 digits of your collaborator code.");
       return;
     }
-    var shop = loadShop();
-    shop.forEach(function (item) {
-      if (item.id === theme.id) item.shop_status = "working_on_it";
-    });
-    saveShop(shop);
-    track("theme_compatibility_status_changed", Object.assign({
-      source: "homepage",
-      previous_status: "make_compatible",
-      current_status: "working_on_it"
-    }, themeFields(theme)));
-    track("theme_compatibility_request_sent", Object.assign({
-      source: "crisp",
-      request_count_for_theme: "1"
-    }, themeFields(theme)));
 
-    var chatState = loadChat();
-    chatState.pending = theme.id;
-    saveChat(chatState);
+    // BR-05: Crisp blocked / fails to send → keep the modal + Get support, no status change.
+    if (!crispReady()) {
+      setCollabError("Couldn't reach support chat. Please check your connection and try again.");
+      return;
+    }
 
+    // Loading while the request is delivered (BFS: primary button shows progress).
+    setCollabError("");
+    setLoading(collabSend, true);
+    setTimeout(function () {
+      // Guard against the modal being closed mid-send.
+      if (collabTheme !== theme) { setLoading(collabSend, false); return; }
+      setLoading(collabSend, false);
+
+      // ET-06: collaborator code submitted (OTP verified on the app, not parsed from Crisp chat).
+      track("theme_compatibility_collab_code_submitted", Object.assign({ source: "crisp" }, themeFields(theme)));
+
+      // App sends request + collab code to Crisp; Crisp only auto-replies Thanks (BR-08 / BR-09).
+      var chatState = loadChat();
+      chatState.pending = theme.id;
+      chatState.code = true;
+      saveChat(chatState);
+      pushChat("user", "Request to make " + theme.schema_theme + " (" + theme.display_name + ") compatible. Collaborator code: " + code);
+      pushChat("agent", THANKS);
+
+      // ET-07 (request delivered) → status Working on it → ET-04 (BR-05 order).
+      track("theme_compatibility_request_sent", Object.assign({
+        source: "crisp",
+        request_count_for_theme: "1"
+      }, themeFields(theme)));
+      var shop = loadShop();
+      shop.forEach(function (item) {
+        if (item.id === theme.id) item.shop_status = "working_on_it";
+      });
+      saveShop(shop);
+      track("theme_compatibility_status_changed", Object.assign({
+        source: "homepage",
+        previous_status: "make_compatible",
+        current_status: "working_on_it"
+      }, themeFields(theme)));
+
+      // Success: close the modal and confirm with a Polaris toast; mock IT finishing later.
+      collabTheme = null;
+      closeModals();
+      showToast("Code sent");
+      scheduleFinish(theme.id);
+    }, 500);
+  }
+
+  // "Live chat" (secondary) — open Crisp for a direct conversation; no code sent, no status change.
+  function openLiveChat() {
     closeModals();
     openChat();
-    pushChat("user", "Hi! I'd love to use Findter with the " + theme.schema_theme + " theme, could you help make it compatible?");
-    pushChat("agent", "We've received your request to support the " + theme.schema_theme + " theme.");
+  }
 
-    chatState = loadChat();
-    if (!chatState.code) {
-      // Ask collaborator code once per chat, only if never received a code.
-      if (!chatState.asked) {
-        chatState.asked = true;
-        chatState.misses = 0;
-        saveChat(chatState);
-        pushChat("agent", COLLAB_ASK);
-      }
-      // Wait for merchant to send a 4-digit collaborator code (LOG-04).
-    } else {
-      // Code already on file — skip COLLAB_ASK; mock system finish after 10s.
-      scheduleFinish(theme.id);
-    }
+  // "Back to themes" — return to the Choose your theme modal without sending (no status change).
+  function backToChoose() {
+    collabTheme = null;
+    setLoading(collabSend, false);
+    setCollabError("");
+    hideOverlay(collabModal);
+    openIds.collab = false;
+    openIds.choose = true;
+    renderList();
+    showOverlay(choose);
   }
 
   function finishSupport(themeId) {
@@ -495,33 +641,16 @@
         current_status: "compatible"
       }, themeFields(item)));
     });
-    pushChat("agent", "Good news! " + original.display_name + " is now compatible with Findter, you're all set to select it.");
+    // BR-11 / UI-05: Crisp sends no further message (no "Good news"); the app silently
+    // flips the shop theme copy to Compatible once IT finishes.
   }
 
   function handleChat(text) {
     var value = String(text || "").trim();
     if (!value) return;
     pushChat("user", value);
-    var state = loadChat();
-
-    // Collab-code response flow only while waiting for a code (LOG-04).
-    if (state.code || !state.asked || !state.pending) return;
-
-    var code = fourDigits(value);
-    if (code) {
-      state.code = true;
-      state.misses = 0;
-      saveChat(state);
-      var pending = themes().filter(function (theme) { return theme.id === state.pending; })[0];
-      track("theme_compatibility_collab_code_submitted", Object.assign({ source: "crisp" }, pending ? themeFields(pending) : {}));
-      pushChat("agent", THANKS);
-      scheduleFinish(state.pending);
-      return;
-    }
-
-    state.misses += 1;
-    saveChat(state);
-    pushChat("agent", state.misses >= 3 ? FALLBACK : CHECK_CODE);
+    // Live chat only. Collaborator code is collected in the in-app Enter collaborator code
+    // modal (BR-08); Crisp no longer asks for the code or counts wrong attempts (BR-10).
   }
 
   function markOnboardingDone(theme) {
@@ -623,7 +752,7 @@
       event.preventDefault();
       event.stopPropagation();
       var theme = themes().filter(function (item) { return item.id === support.getAttribute("data-support"); })[0];
-      if (theme) requestSupport(theme);
+      if (theme) openCollab(theme);
       return;
     }
     var row = event.target.closest("[data-theme]");
@@ -658,6 +787,51 @@
     openIds.choose = true;
     showOverlay(choose);
   });
+  if (collabSend) {
+    collabSend.addEventListener("click", function () { sendToCrisp(); });
+  }
+  if (collabChat) {
+    collabChat.addEventListener("click", function () { openLiveChat(); });
+  }
+  if (collabBack) {
+    collabBack.addEventListener("click", function () { backToChoose(); });
+  }
+  if (otpWrap) {
+    otpWrap.addEventListener("input", function (event) {
+      var box = event.target.closest("[data-otp]");
+      if (!box) return;
+      setCollabError("");
+      box.value = (box.value || "").replace(/\D/g, "").slice(0, 1);
+      markFilled(box);
+      if (box.value) {
+        var next = otpWrap.querySelector('[data-otp="' + (Number(box.getAttribute("data-otp")) + 1) + '"]');
+        if (next && typeof next.focus === "function") next.focus();
+      }
+      updateSendState();
+    });
+    otpWrap.addEventListener("paste", function (event) {
+      var box = event.target.closest("[data-otp]");
+      if (!box) return;
+      event.preventDefault();
+      // Support pasting the whole code; trim spaces and keep digits only.
+      var text = (event.clipboardData || window.clipboardData).getData("text") || "";
+      var digits = text.trim().replace(/\D/g, "").slice(0, 4);
+      if (!digits) return;
+      setCollabError("");
+      fillOtp(digits);
+    });
+    otpWrap.addEventListener("keydown", function (event) {
+      var box = event.target.closest("[data-otp]");
+      if (!box) return;
+      if (event.key === "Backspace" && !box.value) {
+        var prev = otpWrap.querySelector('[data-otp="' + (Number(box.getAttribute("data-otp")) - 1) + '"]');
+        if (prev && typeof prev.focus === "function") prev.focus();
+      } else if (event.key === "Enter" && otpValue().length === 4) {
+        event.preventDefault();
+        sendToCrisp();
+      }
+    });
+  }
   enableBtn.addEventListener("click", function () {
     if (enableBtn.hasAttribute("disabled") || !selected) return;
     track("enable_app_in_theme_editor_clicked", Object.assign({ source: "homepage" }, themeFields(selected)));
