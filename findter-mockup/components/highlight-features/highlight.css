@@ -81,9 +81,11 @@
 }
 
 #fdt-hf .fdt-hf__media video,
+#fdt-hf .fdt-hf__media canvas,
 #fdt-hf .fdt-hf__media-stage video,
 #fdt-hf .fdt-hf__media-stage img,
-#fdt-hf-home .fdt-hf__media video {
+#fdt-hf-home .fdt-hf__media video,
+#fdt-hf-home .fdt-hf__media canvas {
   display: block;
   width: 100%;
   height: 100%;
