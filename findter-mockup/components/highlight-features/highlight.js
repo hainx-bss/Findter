@@ -414,7 +414,8 @@
         if (reset) index = 0;
         viewed = false;
         render("show");
-        if (!viewed && current()) {
+        // ET-01 fires on the Highlight page only; the Homepage card is measured by ET-02 / ET-04.
+        if (!viewed && current() && options.source === "highlight_page") {
           viewed = true;
           track("highlight_feature_viewed", baseEvent(options.source, current()));
         }
