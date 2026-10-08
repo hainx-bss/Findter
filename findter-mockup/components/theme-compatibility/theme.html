@@ -1,6 +1,8 @@
 <div id="fdt-theme">
   <s-modal id="fdt-theme-choose" heading="Choose your theme" size="base">
     <s-stack gap="base">
+      <!-- AF11 / BR-31: auto-send failure feedback stays on Choose your theme (no OTP modal opens). -->
+      <div id="fdt-theme-alert"></div>
       <s-search-field
         id="fdt-theme-search"
         label="Search themes"

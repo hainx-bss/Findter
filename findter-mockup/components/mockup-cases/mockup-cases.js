@@ -42,7 +42,8 @@
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-review">Reset review</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-index">Reset index</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-chat">Reset chat</button>' +
-      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-support-theme">Reset support theme</button>';
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-support-theme">Reset support theme</button>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="reset-collab-code">Reset collaborator code</button>';
   }
 
   function placeMenu() {
@@ -141,6 +142,12 @@
     if (name === "reset-support-theme") {
       var supportApi = themeApi();
       if (supportApi && typeof supportApi.resetSupportTheme === "function") supportApi.resetSupportTheme();
+      return;
+    }
+    // BR-31: forget the stored collaborator code so Get support asks for it again (AF1 step 2).
+    if (name === "reset-collab-code") {
+      var collabApi = themeApi();
+      if (collabApi && typeof collabApi.resetCollabCode === "function") collabApi.resetCollabCode();
     }
   }
 

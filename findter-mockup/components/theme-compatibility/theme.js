@@ -3,7 +3,9 @@
   var KEY = {
     shop: "findter.theme.shop.v1",
     chat: "findter.theme.chat.v1",
-    embed: "findter.theme.embed.v1"
+    embed: "findter.theme.embed.v1",
+    // BR-31: the collaborator code is recorded per shop once a request goes through.
+    collab: "findter.theme.collab.v1"
   };
   var INDEX_KEY = "findter.highlight.indexCompletedAt";
   var MASTER = [
@@ -19,14 +21,18 @@
     { id: "1005", display_name: "Warehouse Main", schema_theme: "Warehouse", theme_version: "4.0.0", live: false, last_saved: 2 }
   ];
   var THANKS = "Thanks for providing the information. Our team has received your request and will get back to you as soon as possible.";
+  // CR-07: Crisp reply when the request is auto-sent with the code already on file (AF11).
+  var THANKS_AGAIN = "Thanks! We've got your request for this theme and our team is already on it. We're using the collaborator access you already shared, so there's nothing else you need to do.";
+  var SEND_FAILED = "We couldn't send your request. Check your connection or turn off your ad blocker, then try again.";
 
   var events = [];
-  window.FindterTheme = { events: events, resetChat: null, resetSupportTheme: null };
+  window.FindterTheme = { events: events, resetChat: null, resetSupportTheme: null, resetCollabCode: null };
   var choose = document.getElementById("fdt-theme-choose");
   var embed = document.getElementById("fdt-theme-embed");
   var editor = document.getElementById("fdt-theme-editor");
   var search = document.getElementById("fdt-theme-search");
   var listEl = document.getElementById("fdt-theme-list");
+  var alertEl = document.getElementById("fdt-theme-alert");
   var banner = document.getElementById("fdt-theme-embed-banner");
   var selectedEl = document.getElementById("fdt-theme-selected");
   var enableBtn = document.getElementById("fdt-theme-enable");
@@ -131,6 +137,30 @@
 
   function saveChat(state) {
     localStorage.setItem(KEY.chat, JSON.stringify(state));
+  }
+
+  // BR-31: once a request is delivered, the collaborator code is kept at shop level so the
+  // next Get support on another theme goes straight to Crisp without asking again.
+  function loadCollabCode() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(KEY.collab) || "null");
+      return saved && typeof saved.code === "string" && saved.code.length === 4 ? saved : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveCollabCode(code, themeId) {
+    localStorage.setItem(KEY.collab, JSON.stringify({
+      code: code,
+      first_theme_id: themeId,
+      requests: (loadCollabCode() || { requests: 0 }).requests + 1,
+      at: now()
+    }));
+  }
+
+  function clearCollabCode() {
+    localStorage.removeItem(KEY.collab);
   }
 
   function loadEmbed() {
@@ -246,6 +276,8 @@
     }
     saveShop(seedShop());
     saveEmbed({});
+    clearCollabCode();
+    setChooseAlert("");
     selected = null;
     collabTheme = null;
     var issue = document.getElementById("fdt-theme-issue");
@@ -265,6 +297,14 @@
     hideOverlay(embed);
     hideOverlay(editor);
     hideOverlay(collabModal);
+  }
+
+  // AF11 failure feedback: the OTP modal never opens, so the error stays on Choose your theme.
+  function setChooseAlert(message) {
+    if (!alertEl) return;
+    alertEl.innerHTML = message
+      ? '<s-banner tone="critical" heading="Couldn\'t send your request">' + esc(message) + "</s-banner>"
+      : "";
   }
 
   function themes() {
@@ -360,6 +400,7 @@
     closeAll();
     openIds.choose = true;
     query = "";
+    setChooseAlert("");
     setFieldValue(search, "");
     renderList();
     showOverlay(choose);
@@ -518,13 +559,21 @@
 
   // AF1 — Get support: fire ET-03 and open the in-app Enter collaborator code modal.
   // Does NOT open Crisp and does NOT change status at this step (BR-05).
+  // AF11 / BR-31: if the shop already has a stored collaborator code, skip the modal entirely
+  // and send the request straight to Crisp — never ask for the code twice.
   function openCollab(theme) {
+    var stored = loadCollabCode();
     track("theme_make_compatible_clicked", Object.assign({
       source: "homepage",
-      theme_status: "make_compatible"
+      theme_status: "make_compatible",
+      code_modal_skipped: stored ? "true" : "false"
     }, themeFields(theme)));
     // BR-06: Working on it already has an open request.
     if (compatibility(theme) === "working_on_it") return;
+    if (stored) {
+      autoSendRequest(theme, stored.code);
+      return;
+    }
     collabTheme = theme;
     closeAll();
     openIds.collab = true;
@@ -561,6 +610,9 @@
       // ET-06: collaborator code submitted (OTP verified on the app, not parsed from Crisp chat).
       track("theme_compatibility_collab_code_submitted", Object.assign({ source: "crisp" }, themeFields(theme)));
 
+      // BR-31: the code is now on file for this shop — later themes skip this modal (AF11).
+      saveCollabCode(code, theme.id);
+
       // App sends request + collab code to Crisp; Crisp only auto-replies Thanks (BR-08 / BR-09).
       var chatState = loadChat();
       chatState.pending = theme.id;
@@ -572,7 +624,8 @@
       // ET-07 (request delivered) → status Working on it → ET-04 (BR-05 order).
       track("theme_compatibility_request_sent", Object.assign({
         source: "crisp",
-        request_count_for_theme: "1"
+        request_count_for_theme: "1",
+        collab_code_source: "entered"
       }, themeFields(theme)));
       var shop = loadShop();
       shop.forEach(function (item) {
@@ -591,6 +644,60 @@
       showToast("Code sent");
       scheduleFinish(theme.id);
     }, 500);
+  }
+
+  // AF11 / BR-31 — Get support on another theme once the code is on file: fire ET-16 and send
+  // request + stored code straight to Crisp. No OTP modal, and no fallback to it on failure.
+  function autoSendRequest(theme, code) {
+    var base = Object.assign({
+      source: "homepage",
+      collab_code_source: "stored",
+      shop_request_count: String(((loadCollabCode() || { requests: 0 }).requests || 0) + 1)
+    }, themeFields(theme));
+
+    // BR-05 / BR-31: Crisp blocked or failing → keep Get support, no status change.
+    if (!crispReady()) {
+      track("theme_support_request_autosent", Object.assign({ send_result: "failed" }, base));
+      setChooseAlert(SEND_FAILED);
+      showToast("Couldn't send your request");
+      return;
+    }
+
+    // ET-16: request auto-sent (replaces the ET-06 modal pair for this theme).
+    track("theme_support_request_autosent", Object.assign({ send_result: "success" }, base));
+    setChooseAlert("");
+
+    var chatState = loadChat();
+    chatState.pending = theme.id;
+    chatState.code = true;
+    saveChat(chatState);
+    // CR-06: the request carries the theme being clicked plus the code already on file.
+    pushChat("user", "Hi! Please make my theme " + theme.display_name + " (" + theme.schema_theme + " " + theme.theme_version + ") compatible with Findter. Collaborator code: " + code);
+    pushChat("agent", THANKS_AGAIN);
+
+    // ET-07 (delivered) → Working on it → ET-04, same order as AF2 (BR-05).
+    track("theme_compatibility_request_sent", Object.assign({
+      source: "crisp",
+      request_count_for_theme: "1",
+      collab_code_source: "stored"
+    }, themeFields(theme)));
+    var shop = loadShop();
+    shop.forEach(function (item) {
+      if (item.id === theme.id) item.shop_status = "working_on_it";
+    });
+    saveShop(shop);
+    track("theme_compatibility_status_changed", Object.assign({
+      source: "homepage",
+      previous_status: "make_compatible",
+      current_status: "working_on_it"
+    }, themeFields(theme)));
+    saveCollabCode(code, (loadCollabCode() || {}).first_theme_id || theme.id);
+
+    // Crisp chat opens with the request + Thanks so the merchant sees it went through.
+    collabTheme = null;
+    openChat();
+    showToast("Request sent");
+    scheduleFinish(theme.id);
   }
 
   // "Live chat" (secondary) — open Crisp for a direct conversation; no code sent, no status change.
@@ -903,6 +1010,11 @@
   }
   window.FindterTheme.resetChat = resetChat;
   window.FindterTheme.resetSupportTheme = resetSupportTheme;
+  // BR-31: drop the stored code (CSE asks for a new one / uninstall) → the OTP modal returns.
+  window.FindterTheme.resetCollabCode = function () {
+    clearCollabCode();
+    setChooseAlert("");
+  };
 
   setInterval(function () {
     refreshEmbed();
