@@ -4,7 +4,7 @@
   var INDEX_MS = 10000;
   var HOUR_MS = 3600 * 1000;
   var KEY = {
-    items: "findter.highlight.items.v5",
+    items: "findter.highlight.items.v7",
     continueClicked: "findter.highlight.continue",
     viewFeature: "findter.highlight.viewFeature",
     indexCompletedAt: "findter.highlight.indexCompletedAt",
@@ -18,14 +18,15 @@
   }
   var MEDIA = {
     longVideo: assetUrl("preview-long.mp4"),
+    longThumb: assetUrl("preview-long.jpg"),
     shortVideo: assetUrl("preview-short.mp4"),
     image: assetUrl("preview-image.png")
   };
   var SEED = [
     { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: MEDIA.longVideo, media: MEDIA.longVideo, navigateUrl: "features" },
-    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: MEDIA.shortVideo, media: MEDIA.shortVideo, navigateUrl: "features" },
-    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: MEDIA.image, media: MEDIA.image, navigateUrl: "features" },
+    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: MEDIA.longThumb, media: MEDIA.longVideo, mediaType: "video", navigateUrl: "features" },
+    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: MEDIA.shortVideo, mediaType: "video", navigateUrl: "features" },
+    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: MEDIA.image, media: MEDIA.image, mediaType: "image", navigateUrl: "features" },
     { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" },
     { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features" },
     { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
@@ -53,6 +54,8 @@
 
   try { localStorage.removeItem("findter.highlight.indexMs"); } catch (error) {}
   try { localStorage.removeItem("findter.highlight.items.v4"); } catch (error) {}
+  try { localStorage.removeItem("findter.highlight.items.v5"); } catch (error) {}
+  try { localStorage.removeItem("findter.highlight.items.v6"); } catch (error) {}
 
   function readItems() {
     try {
@@ -112,6 +115,11 @@
     if (/\.(mp4|webm|ogg)$/.test(value)) return "video";
     if (/\.gif$/.test(value)) return "gif";
     return url ? "image" : "";
+  }
+
+  // Media Type from Master is the source of truth (BR-32); extension is only a fallback for old data.
+  function mediaTypeOf(feature) {
+    return feature.media ? (feature.mediaType || mediaKind(feature.media)) : "";
   }
 
   function track(name, extra) {
@@ -204,27 +212,53 @@
     else continueRow.setAttribute("hidden", "");
   }
 
+  function imageHtml(url, name) {
+    return '<s-image alt="' + esc(name) + '" src="' + esc(url) + '" aspectRatio="16/9" objectFit="cover" inlineSize="fill"></s-image>';
+  }
+
+  // No Thumbnail: use the first frame of the media as the thumbnail (BR-30).
+  // Video: paused at 0 with no autoplay. GIF: drawn once onto a canvas by drawFirstFrames.
+  function firstFrameHtml(feature) {
+    var kind = mediaTypeOf(feature);
+    if (kind === "video") {
+      return '<video muted playsinline preload="metadata" src="' + esc(feature.media) + '#t=0.001" aria-label="' + esc(feature.name) + '"></video>';
+    }
+    if (kind === "gif") {
+      return '<canvas class="fdt-hf__first-frame" data-first-frame="' + esc(feature.media) + '" aria-label="' + esc(feature.name) + '"></canvas>';
+    }
+    return imageHtml(feature.media, feature.name);
+  }
+
+  function drawFirstFrames(container) {
+    container.querySelectorAll("canvas[data-first-frame]").forEach(function (canvas) {
+      var image = new Image();
+      image.onload = function () {
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+      };
+      image.src = canvas.getAttribute("data-first-frame");
+    });
+  }
+
+  // The card frame shows the thumbnail only; media plays in the Preview modal (BR-30).
   function previewHtml(slide, showView, layout) {
     var feature = slide.feature;
-    var url = feature.media || feature.thumbnail;
-    var kind = mediaKind(url);
+    var thumb = feature.thumbnail || "";
+    var media = feature.media || "";
     var wrapClass = "fdt-hf__media fdt-hf__media--" + (layout === "solo" ? "solo" : "group");
     var frameHtml;
-    if (!url) {
+    if (!thumb && !media) {
       frameHtml =
         '<div class="' + wrapClass + ' fdt-hf__media--empty" role="img" aria-label="' + esc(feature.name) + ' preview">' +
-        '<span class="fdt-hf__media-label">Image or video preview will appear here</span>' +
+        '<span class="fdt-hf__media-label">There is no preview for this feature yet</span>' +
         "</div>";
-    } else if (kind === "video") {
-      frameHtml =
-        '<div class="' + wrapClass + '">' +
-        '<s-clickable border="base" borderRadius="base" data-media-src="' + esc(url) + '" data-media-kind="video" data-media-name="' + esc(feature.name) + '" accessibilityLabel="Play preview of ' + esc(feature.name) + '">' +
-        '<video muted playsinline src="' + esc(url) + '"></video></s-clickable></div>';
     } else {
-      frameHtml =
-        '<div class="' + wrapClass + '">' +
-        '<s-clickable border="base" borderRadius="base" data-media-src="' + esc(url) + '" data-media-kind="' + kind + '" data-media-name="' + esc(feature.name) + '" accessibilityLabel="Play preview of ' + esc(feature.name) + '">' +
-        '<s-image alt="' + esc(feature.name) + '" src="' + esc(url) + '" aspectRatio="16/9" objectFit="cover" inlineSize="fill"></s-image></s-clickable></div>';
+      var open =
+        '<s-clickable border="base" borderRadius="base" data-media-code="' + esc(feature.code) + '"' +
+        ' accessibilityLabel="Preview ' + esc(feature.name) + '">';
+      var inner = thumb ? imageHtml(thumb, feature.name) : firstFrameHtml(feature);
+      frameHtml = '<div class="' + wrapClass + '">' + open + inner + "</s-clickable></div>";
     }
     if (!showView) return frameHtml;
     return (
@@ -240,7 +274,6 @@
     var timer = null;
     var hovering = false;
     var modalOpen = false;
-    var playedKey = "";
     var viewed = false;
     var list = [];
 
@@ -255,66 +288,11 @@
       return !!(options.autoplay && !hovering && !modalOpen && mode === "highlight" && root && !root.hidden);
     }
 
-    // Image / empty: SLIDE_MS. Short video: advance on ended. Long video: cut at SLIDE_MS.
+    // Every feature advances after SLIDE_MS while Idle (BR-21); the card never plays media.
     function armTimer() {
       stopTimer();
       if (!canAutoAdvance()) return;
-      var slide = current();
-      var url = slide && (slide.feature.media || slide.feature.thumbnail);
-      var kind = mediaKind(url);
-      if (kind === "video") {
-        var video = bodyEl.querySelector("video");
-        if (!video) {
-          timer = setTimeout(advance, SLIDE_MS);
-          return;
-        }
-        if (video.ended) {
-          advance();
-          return;
-        }
-        function scheduleFromDuration() {
-          if (!canAutoAdvance() || !video.isConnected) return;
-          var durMs = video.duration * 1000;
-          if (!isFinite(durMs) || durMs <= 0) {
-            stopTimer();
-            timer = setTimeout(advance, SLIDE_MS);
-            return;
-          }
-          // Short clip: clear fallback timer and wait for ended (hooked in playMedia).
-          // Long clip: cut at SLIDE_MS.
-          stopTimer();
-          if (durMs > SLIDE_MS) timer = setTimeout(advance, SLIDE_MS);
-        }
-        if (video.readyState >= 1 && isFinite(video.duration) && video.duration > 0) {
-          scheduleFromDuration();
-        } else {
-          video.addEventListener("loadedmetadata", scheduleFromDuration, { once: true });
-          timer = setTimeout(advance, SLIDE_MS);
-        }
-        return;
-      }
       timer = setTimeout(advance, SLIDE_MS);
-    }
-
-    function playMedia(slide) {
-      var feature = slide.feature;
-      var kind = mediaKind(feature.media || feature.thumbnail);
-      var video = bodyEl.querySelector("video");
-      if (video) {
-        video.loop = false;
-        video.addEventListener("ended", function onEnded() {
-          stopTimer();
-          // Idle: advance to next feature. Not idle (hover/modal): keep last frame.
-          if (canAutoAdvance()) advance();
-        }, { once: true });
-        var play = video.play();
-        if (play && play.catch) play.catch(function () {});
-      }
-      if (kind !== "video" && kind !== "gif") return;
-      var key = feature.code + ":" + index;
-      if (playedKey === key) return;
-      playedKey = key;
-      track("highlight_feature_media_played", Object.assign(baseEvent(options.source, slide), { media_type: kind }));
     }
 
     function render(reason) {
@@ -353,7 +331,7 @@
           "<div>" + previewHtml(slide, showView, "group") + "</div>" +
           "</s-grid>";
       }
-      playMedia(slide);
+      drawFirstFrames(bodyEl);
       if (reason === "auto_slide") {
         track("highlight_feature_slide_changed", Object.assign(baseEvent(options.source, slide), { slide_reason: "auto_slide" }));
       }
@@ -407,9 +385,11 @@
         openView(options.source, itemByCode(view.getAttribute("data-view-code")));
         return;
       }
-      var media = event.target.closest("[data-media-src]");
+      var media = event.target.closest("[data-media-code]");
       if (media) {
-        openMedia(media.getAttribute("data-media-src"), media.getAttribute("data-media-kind"), media.getAttribute("data-media-name"));
+        var slide = null;
+        list.forEach(function (entry) { if (entry.feature.code === media.getAttribute("data-media-code")) slide = entry; });
+        if (slide) openMedia(slide, options.source);
         return;
       }
       var feature = event.target.closest("[data-feature]");
@@ -426,12 +406,6 @@
       if (!frameEl) return;
       if (event.relatedTarget && frameEl.contains(event.relatedTarget)) return;
       hovering = false;
-      // If the short video already finished while hovering, move on immediately.
-      var video = bodyEl.querySelector("video");
-      if (video && video.ended) {
-        advance();
-        return;
-      }
       armTimer();
     });
 
@@ -453,29 +427,52 @@
     };
   }
 
-  function openMedia(url, kind, name) {
-    if (!url || !pageWidget) return;
+  function stageImage(url, name) {
+    var image = document.createElement("s-image");
+    image.setAttribute("src", url);
+    image.setAttribute("alt", name || "");
+    image.setAttribute("aspectRatio", "16/9");
+    image.setAttribute("objectFit", "cover");
+    image.setAttribute("inlineSize", "fill");
+    mediaStage.appendChild(image);
+  }
+
+  function stageEmpty() {
+    mediaStage.innerHTML =
+      '<div class="fdt-hf__media--empty" style="height:100%"><span class="fdt-hf__media-label">There is no preview for this feature yet</span></div>';
+  }
+
+  // Media URL → play it once (muted, no loop, last frame stays). Thumbnail only → still image (BR-30, BR-31).
+  function openMedia(slide, source) {
+    var feature = slide.feature;
+    var kind = mediaTypeOf(feature);
+    if (!pageWidget || (!feature.media && !feature.thumbnail)) return;
     pageWidget.pauseForModal();
     mediaStage.innerHTML = "";
     if (kind === "video") {
       var video = document.createElement("video");
-      video.src = url;
+      video.src = feature.media;
       video.muted = true;
       video.controls = true;
       video.autoplay = true;
       video.playsInline = true;
       video.loop = false;
+      // Broken or slow URL: fall back to the thumbnail, else the empty state (BR-40).
+      video.addEventListener("error", function () {
+        mediaStage.innerHTML = "";
+        if (feature.thumbnail) stageImage(feature.thumbnail, feature.name);
+        else stageEmpty();
+      }, { once: true });
       mediaStage.appendChild(video);
       var play = video.play();
       if (play && play.catch) play.catch(function () {});
+    } else if (feature.media) {
+      stageImage(feature.media, feature.name);
     } else {
-      var image = document.createElement("s-image");
-      image.setAttribute("src", url);
-      image.setAttribute("alt", name || "");
-      image.setAttribute("aspectRatio", "16/9");
-      image.setAttribute("objectFit", "cover");
-      image.setAttribute("inlineSize", "fill");
-      mediaStage.appendChild(image);
+      stageImage(feature.thumbnail, feature.name);
+    }
+    if (kind === "video" || kind === "gif") {
+      track("highlight_feature_media_played", Object.assign(baseEvent(source, slide), { media_type: kind }));
     }
     if (typeof mediaModal.showOverlay === "function") mediaModal.showOverlay();
     else mediaModal.removeAttribute("hidden");
@@ -555,7 +552,7 @@
       "border:1px dashed var(--p-color-border,#c9cccf);border-radius:.5rem;background:var(--p-color-bg-surface-secondary,#fafafa)}" +
       "#fdt-hf-home .fdt-hf__media-label{color:var(--p-color-text-secondary,#616161);font-size:.8125rem;text-align:center}" +
       "#fdt-hf-home .fdt-hf__media>s-clickable{display:block;width:100%;height:100%}" +
-      "#fdt-hf-home .fdt-hf__media video{display:block;width:100%;height:100%;object-fit:cover}";
+      "#fdt-hf-home .fdt-hf__media video,#fdt-hf-home .fdt-hf__media canvas{display:block;width:100%;height:100%;object-fit:cover}";
     doc.head.appendChild(style);
   }
 
