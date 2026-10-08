@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Highlight Master</title>
+<!--
+  Findter – Master: Highlight features (draft prototype, RQM V2)
+  Covers UI-05, UI-06, UI-07 and LOG-05 AF1 – AF6.
+  Decisions applied (08/10/2026): new item goes last, default status Disable (Q7);
+  required-field errors per field, no URL check, max 40 characters, "Edit group" + "Save" (Q8);
+  no count limit (Q9); group without an enabled feature is hidden (Q10);
+  Standalone group has no child features (Q11); changes need Save (Q13); no Master tracking (Q14).
+  Q12 is open: this draft lets you edit from the row name and from the Edit button,
+  and lets you change Parent group inside Edit feature.
+  The App Bridge save bar does not run outside Shopify admin, so the form shows a banner with Discard / Save.
+-->
+<script src="https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js"></script>
+<style>
+  body { margin: 0; background: #f1f1f1; }
+  .row { border-radius: 8px; }
+  .row[draggable="true"] { cursor: grab; }
+  .row.dragging { opacity: .4; }
+  .row.drop-before { box-shadow: 0 -2px 0 0 #005bd3; }
+  .row.drop-after { box-shadow: 0 2px 0 0 #005bd3; }
+  .children { padding-inline-start: 40px; }
+</style>
+</head>
+<body>
+<form data-save-bar data-discard-confirmation id="master-form" onsubmit="return false">
+<s-page heading="Highlight features">
+  <s-button slot="primary-action" variant="primary" id="btn-add-group">Add group</s-button>
+  <s-button slot="secondary-actions" id="btn-add-feature">Add feature</s-button>
+
+  <s-stack gap="base">
+    <s-banner tone="warning" heading="Unsaved changes" id="unsaved" hidden>
+      <s-stack gap="small">
+        <s-text>Status or order changed. Save to show the changes on the Highlight page and the Homepage card.</s-text>
+        <s-stack direction="inline" gap="small">
+          <s-button id="btn-discard">Discard</s-button>
+          <s-button variant="primary" id="btn-save">Save</s-button>
+        </s-stack>
+      </s-stack>
+    </s-banner>
+
+    <s-section padding="none">
+      <s-box padding="base">
+        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+          <s-text type="strong">Groups</s-text>
+          <s-text color="subdued">Drag a row to change the order. Features move only inside their group.</s-text>
+        </s-stack>
+      </s-box>
+      <s-divider></s-divider>
+      <div id="list"></div>
+    </s-section>
+  </s-stack>
+</s-page>
+</form>
+
+<!-- UI-06: Group form -->
+<s-modal id="group-modal" heading="Add group">
+  <s-stack gap="base">
+    <s-text-field id="g-name" label="Group name" maxLength="40" required details="Up to 40 characters"></s-text-field>
+    <s-switch id="g-status" label="Show this group"></s-switch>
+    <s-checkbox id="g-standalone" label="Standalone" details="Tick if this group is a feature on its own (for example, Year Make Model)."></s-checkbox>
+    <div id="g-standalone-fields" hidden><s-stack gap="base">
+      <s-text-field id="g-title" label="Feature title" maxLength="40" required details="Up to 40 characters"></s-text-field>
+      <s-text-field id="g-thumb" label="Thumbnail link" details="Leave blank to use the first frame of the media."></s-text-field>
+      <s-text-field id="g-media" label="Media link"></s-text-field>
+      <s-select id="g-type" label="Media type" details="Required when there is a media link.">
+        <s-option value="none">Select</s-option>
+        <s-option value="image">Image</s-option>
+        <s-option value="video">Video</s-option>
+        <s-option value="gif">GIF</s-option>
+      </s-select>
+      <s-text-field id="g-nav" label="Navigate link"></s-text-field>
+    </s-stack></div>
+  </s-stack>
+  <s-button slot="secondary-actions" commandFor="group-modal" command="--hide">Cancel</s-button>
+  <s-button slot="primary-action" variant="primary" id="g-save">Save</s-button>
+</s-modal>
+
+<!-- UI-07: Feature form -->
+<s-modal id="feature-modal" heading="Add feature">
+  <s-stack gap="base">
+    <s-select id="f-parent" label="Parent group" required></s-select>
+    <div id="f-newgroup-wrap" hidden><s-text-field id="f-newgroup" label="New group name" maxLength="40" required details="Up to 40 characters"></s-text-field></div>
+    <s-text-field id="f-title" label="Title" maxLength="40" required details="Up to 40 characters"></s-text-field>
+    <s-text-field id="f-thumb" label="Thumbnail link" details="Leave blank to use the first frame of the media."></s-text-field>
+    <s-text-field id="f-media" label="Media link"></s-text-field>
+    <s-select id="f-type" label="Media type" details="Required when there is a media link.">
+      <s-option value="none">Select</s-option>
+      <s-option value="image">Image</s-option>
+      <s-option value="video">Video</s-option>
+      <s-option value="gif">GIF</s-option>
+    </s-select>
+    <s-text-field id="f-nav" label="Navigate link"></s-text-field>
+    <s-switch id="f-status" label="Show this feature"></s-switch>
+  </s-stack>
+  <s-button slot="secondary-actions" commandFor="feature-modal" command="--hide">Cancel</s-button>
+  <s-button slot="primary-action" variant="primary" id="f-save">Save</s-button>
+</s-modal>
+
+<!-- Delete confirmation (copy: Admin UI source; UI-05 has a second version, Q6) -->
+<s-modal id="delete-modal" heading="Delete" size="small">
+  <s-text id="delete-text"></s-text>
+  <s-button slot="secondary-actions" commandFor="delete-modal" command="--hide">Cancel</s-button>
+  <s-button slot="primary-action" variant="primary" tone="critical" id="delete-confirm">Delete</s-button>
+</s-modal>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let uid = 100;
+  const nextId = () => 'x' + (++uid);
+
+  // Saved data (what merchants see) and the draft being edited on this page.
+  let saved = [
+    { id: 'g1', name: 'Filter', status: true, standalone: false, open: true, features: [
+      { id: 'f1', title: 'Merge filter group', thumb: '', media: 'https://example.com/merge.mp4', type: 'video', nav: '', status: true },
+      { id: 'f2', title: 'Image swatch', thumb: 'https://example.com/swatch.png', media: '', type: '', nav: '', status: true },
+      { id: 'f3', title: 'Price slider', thumb: '', media: '', type: '', nav: '', status: false },
+    ]},
+    { id: 'g2', name: 'Year Make Model', status: true, standalone: true, open: false,
+      title: 'Year Make Model', thumb: '', media: 'https://example.com/ymm.gif', type: 'gif', nav: '', features: [] },
+    { id: 'g3', name: 'Search', status: true, standalone: false, open: false, features: [
+      { id: 'f4', title: 'Instant search', thumb: '', media: '', type: '', nav: '', status: true },
+    ]},
+    { id: 'g4', name: 'Merchandising', status: false, standalone: false, open: false, features: [] },
+  ];
+  let draft = structuredClone(saved);
+  const clone = (v) => structuredClone(v);
+  const dirty = () => JSON.stringify(strip(draft)) !== JSON.stringify(strip(saved));
+  const strip = (gs) => gs.map(({ open, ...g }) => g);
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const findGroup = (id) => draft.find((g) => g.id === id);
+  const findFeature = (id) => {
+    for (const g of draft) { const f = g.features.find((x) => x.id === id); if (f) return { g, f }; }
+    return null;
+  };
+
+  // Q10: a non-standalone group with no enabled feature is not shown to merchants.
+  function visibility(g) {
+    if (!g.status) return { tone: 'neutral', text: 'Hidden' };
+    if (!g.standalone && !g.features.some((f) => f.status)) return { tone: 'warning', text: 'Not shown: no feature on' };
+    return { tone: 'success', text: 'Shown' };
+  }
+
+  function groupRow(g, i) {
+    const v = visibility(g);
+    const feats = g.standalone ? '' : `
+      <div class="children" ${g.open ? '' : 'hidden'}>
+        ${g.features.map((f, j) => featureRow(g, f, j)).join('')}
+        <s-box padding="small-100">
+          <s-button variant="tertiary" icon="plus" data-act="add-feature" data-g="${g.id}">Add feature</s-button>
+        </s-box>
+      </div>`;
+    return `
+      <div class="row group-row" draggable="true" data-kind="group" data-id="${g.id}">
+        <div class="row-head"><s-box padding="small-100 base">
+          <s-stack direction="inline" alignItems="center" gap="base" justifyContent="space-between">
+            <s-stack direction="inline" alignItems="center" gap="small">
+              <s-icon type="drag-handle"></s-icon>
+              <s-text color="subdued">${i + 1}</s-text>
+              ${g.standalone ? '<s-box inlineSize="28px"></s-box>' :
+                `<s-button variant="tertiary" icon="${g.open ? 'chevron-down' : 'chevron-right'}" accessibilityLabel="Show features" data-act="toggle-open" data-g="${g.id}"></s-button>`}
+              <s-link data-act="edit-group" data-g="${g.id}">${esc(g.name)}</s-link>
+              ${g.standalone ? '<s-badge>Standalone</s-badge>' : `<s-text color="subdued">${g.features.length} feature${g.features.length === 1 ? '' : 's'}</s-text>`}
+              <s-badge tone="${v.tone}">${v.text}</s-badge>
+            </s-stack>
+            <s-stack direction="inline" alignItems="center" gap="small">
+              <s-switch accessibilityLabel="Show group ${esc(g.name)}" ${g.status ? 'checked' : ''} data-act="status-group" data-g="${g.id}"></s-switch>
+              <s-button variant="tertiary" icon="edit" accessibilityLabel="Edit group" data-act="edit-group" data-g="${g.id}"></s-button>
+              <s-button variant="tertiary" icon="delete" tone="critical" accessibilityLabel="Delete group" data-act="delete-group" data-g="${g.id}"></s-button>
+            </s-stack>
+          </s-stack>
+        </s-box></div>
+        ${feats}
+        <s-divider></s-divider>
+      </div>`;
+  }
+
+  function featureRow(g, f, j) {
+    const media = f.media ? (f.type || 'media') : (f.thumb ? 'thumbnail' : 'no preview');
+    return `
+      <div class="row feature-row" draggable="true" data-kind="feature" data-g="${g.id}" data-id="${f.id}">
+        <div class="row-head"><s-box padding="small-100 base">
+          <s-stack direction="inline" alignItems="center" gap="base" justifyContent="space-between">
+            <s-stack direction="inline" alignItems="center" gap="small">
+              <s-icon type="drag-handle"></s-icon>
+              <s-text color="subdued">${j + 1}</s-text>
+              <s-link data-act="edit-feature" data-f="${f.id}">${esc(f.title)}</s-link>
+              <s-badge>${esc(media)}</s-badge>
+            </s-stack>
+            <s-stack direction="inline" alignItems="center" gap="small">
+              <s-switch accessibilityLabel="Show feature ${esc(f.title)}" ${f.status ? 'checked' : ''} data-act="status-feature" data-f="${f.id}"></s-switch>
+              <s-button variant="tertiary" icon="edit" accessibilityLabel="Edit feature" data-act="edit-feature" data-f="${f.id}"></s-button>
+              <s-button variant="tertiary" icon="delete" tone="critical" accessibilityLabel="Delete feature" data-act="delete-feature" data-f="${f.id}"></s-button>
+            </s-stack>
+          </s-stack>
+        </s-box></div>
+      </div>`;
+  }
+
+  function render() {
+    const list = $('list');
+    list.innerHTML = draft.length
+      ? draft.map(groupRow).join('')
+      : '<s-box padding="large"><s-text color="subdued">No highlight features to show yet.</s-text></s-box>';
+    $('unsaved').hidden = !dirty();
+  }
+
+  // Row actions
+  $('list').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el || el.tagName === 'S-SWITCH') return;
+    const { act, g, f } = el.dataset;
+    if (act === 'toggle-open') { findGroup(g).open = !findGroup(g).open; render(); }
+    if (act === 'edit-group') openGroup(g);
+    if (act === 'add-feature') openFeature(null, g);
+    if (act === 'edit-feature') openFeature(f);
+    if (act === 'delete-group') askDelete('group', g);
+    if (act === 'delete-feature') askDelete('feature', f);
+  });
+  $('list').addEventListener('change', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    if (el.dataset.act === 'status-group') findGroup(el.dataset.g).status = el.checked;
+    if (el.dataset.act === 'status-feature') findFeature(el.dataset.f).f.status = el.checked;
+    render();
+  });
+
+  // Drag and drop (groups among groups; features only inside the same group)
+  let drag = null;
+  $('list').addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.row');
+    if (!row) return;
+    e.stopPropagation();
+    drag = { kind: row.dataset.kind, id: row.dataset.id, g: row.dataset.g };
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  const target = (e) => {
+    if (!drag) return null;
+    const rows = [...document.querySelectorAll(drag.kind === 'group' ? '.group-row' : `.feature-row[data-g="${drag.g}"]`)];
+    const row = rows.find((r) => r.contains(e.target) && r.dataset.id !== drag.id);
+    if (!row) return null;
+    const box = row.querySelector(':scope > .row-head').getBoundingClientRect();
+    return { row, after: e.clientY > box.top + box.height / 2 };
+  };
+  const clearMarks = () => document.querySelectorAll('.drop-before,.drop-after').forEach((r) => r.classList.remove('drop-before', 'drop-after'));
+  $('list').addEventListener('dragover', (e) => {
+    const t = target(e);
+    clearMarks();
+    if (!t) return;
+    e.preventDefault();
+    t.row.classList.add(t.after ? 'drop-after' : 'drop-before');
+  });
+  $('list').addEventListener('drop', (e) => {
+    const t = target(e);
+    clearMarks();
+    if (!t) return;
+    e.preventDefault();
+    const arr = drag.kind === 'group' ? draft : findGroup(drag.g).features;
+    const from = arr.findIndex((x) => x.id === drag.id);
+    const [item] = arr.splice(from, 1);
+    let to = arr.findIndex((x) => x.id === t.row.dataset.id);
+    if (t.after) to += 1;
+    arr.splice(to, 0, item);
+    render();
+  });
+  $('list').addEventListener('dragend', () => { drag = null; clearMarks(); document.querySelectorAll('.dragging').forEach((r) => r.classList.remove('dragging')); });
+
+  // Save / Discard (Q13: status and order changes need Save)
+  $('btn-save').addEventListener('click', () => { saved = clone(draft); render(); });
+  $('btn-discard').addEventListener('click', () => {
+    const open = Object.fromEntries(draft.map((g) => [g.id, g.open]));
+    draft = clone(saved);
+    draft.forEach((g) => { if (g.id in open) g.open = open[g.id]; });
+    render();
+  });
+  // Forms and deletes save straight away, so keep the pending list changes apart from them.
+  const commit = (fn) => { fn(draft); fn(saved); render(); };
+
+  // Field helpers
+  const val = (id) => { const v = ($(id).value || '').trim(); return v === 'none' ? '' : v; };
+  const setErr = (id, msg) => { $(id).error = msg || ''; };
+  const reset = (ids) => ids.forEach((id) => setErr(id, ''));
+
+  // UI-06 Group form
+  let editingGroup = null;
+  $('g-standalone').addEventListener('change', () => { $('g-standalone-fields').hidden = !$('g-standalone').checked; });
+  function openGroup(id) {
+    editingGroup = id;
+    const g = id ? findGroup(id) : { name: '', status: false, standalone: false, title: '', thumb: '', media: '', type: '', nav: '', features: [] };
+    $('group-modal').heading = id ? 'Edit group' : 'Add group';
+    $('g-name').value = g.name;
+    $('g-status').checked = g.status;
+    $('g-standalone').checked = g.standalone;
+    // Q11: a Standalone group has no features, so a group with features cannot become Standalone.
+    $('g-standalone').disabled = g.features.length > 0;
+    $('g-standalone').details = g.features.length > 0
+      ? 'Remove the features in this group before making it Standalone.'
+      : 'Tick if this group is a feature on its own (for example, Year Make Model).';
+    $('g-standalone-fields').hidden = !g.standalone;
+    $('g-title').value = g.title || '';
+    $('g-thumb').value = g.thumb || '';
+    $('g-media').value = g.media || '';
+    $('g-type').value = g.type || 'none';
+    $('g-nav').value = g.nav || '';
+    reset(['g-name', 'g-title', 'g-type']);
+    $('group-modal').showOverlay();
+  }
+  $('g-save').addEventListener('click', () => {
+    const standalone = $('g-standalone').checked;
+    const errs = {
+      'g-name': val('g-name') ? '' : 'Enter a group name.',
+      'g-title': standalone && !val('g-title') ? 'Enter a feature title.' : '',
+      'g-type': standalone && val('g-media') && !val('g-type') ? 'Select a media type for this media link.' : '',
+    };
+    Object.entries(errs).forEach(([id, m]) => setErr(id, m));
+    if (Object.values(errs).some(Boolean)) return;
+    const data = {
+      name: val('g-name'), status: $('g-status').checked, standalone,
+      title: standalone ? val('g-title') : '', thumb: standalone ? val('g-thumb') : '',
+      media: standalone ? val('g-media') : '', type: standalone ? val('g-type') : '', nav: standalone ? val('g-nav') : '',
+    };
+    if (editingGroup) {
+      const id = editingGroup;
+      commit((list) => Object.assign(list.find((g) => g.id === id), data));
+    } else {
+      const g = { id: nextId(), open: true, features: [], ...data };
+      commit((list) => list.push(clone(g))); // Q7: new group goes last
+    }
+    $('group-modal').hideOverlay();
+  });
+
+  // UI-07 Feature form
+  let editingFeature = null;
+  function fillParents(selected) {
+    const opts = draft.filter((g) => !g.standalone)
+      .map((g) => `<s-option value="${g.id}">${esc(g.name)}</s-option>`).join('');
+    $('f-parent').innerHTML = `<s-option value="none">Select a group</s-option>${opts}<s-option value="__new">Create new group</s-option>`;
+    $('f-parent').value = selected || 'none';
+    $('f-newgroup-wrap').hidden = selected !== '__new';
+  }
+  $('f-parent').addEventListener('change', () => { $('f-newgroup-wrap').hidden = $('f-parent').value !== '__new'; });
+  function openFeature(fid, gid) {
+    editingFeature = fid;
+    const hit = fid ? findFeature(fid) : null;
+    const f = hit ? hit.f : { title: '', thumb: '', media: '', type: '', nav: '', status: false };
+    $('feature-modal').heading = fid ? 'Edit feature' : 'Add feature';
+    fillParents(hit ? hit.g.id : gid);
+    $('f-newgroup').value = '';
+    $('f-title').value = f.title;
+    $('f-thumb').value = f.thumb;
+    $('f-media').value = f.media;
+    $('f-type').value = f.type || 'none';
+    $('f-nav').value = f.nav;
+    $('f-status').checked = f.status;
+    reset(['f-parent', 'f-newgroup', 'f-title', 'f-type']);
+    $('feature-modal').showOverlay();
+  }
+  $('f-save').addEventListener('click', () => {
+    const parent = val('f-parent');
+    const errs = {
+      'f-parent': parent ? '' : 'Select a parent group.',
+      'f-newgroup': parent === '__new' && !val('f-newgroup') ? 'Enter a group name.' : '',
+      'f-title': val('f-title') ? '' : 'Enter a title.',
+      'f-type': val('f-media') && !val('f-type') ? 'Select a media type for this media link.' : '',
+    };
+    Object.entries(errs).forEach(([id, m]) => setErr(id, m));
+    if (Object.values(errs).some(Boolean)) return;
+    const data = { title: val('f-title'), thumb: val('f-thumb'), media: val('f-media'), type: val('f-type'), nav: val('f-nav'), status: $('f-status').checked };
+    let gid = parent;
+    if (parent === '__new') {
+      gid = nextId();
+      const g = { id: gid, name: val('f-newgroup'), status: false, standalone: false, open: true, features: [] };
+      commit((list) => list.push(clone(g)));
+    }
+    const fid = editingFeature || nextId();
+    commit((list) => {
+      let item = { id: fid, ...data };
+      for (const g of list) {
+        const i = g.features.findIndex((x) => x.id === fid);
+        if (i < 0) continue;
+        if (g.id === gid) { Object.assign(g.features[i], data); return; }
+        g.features.splice(i, 1); // moved to another group (Q12 draft)
+      }
+      const target = list.find((g) => g.id === gid);
+      if (target) target.features.push(item); // Q7: new or moved feature goes last
+    });
+    findGroup(gid).open = true;
+    render();
+    $('feature-modal').hideOverlay();
+  });
+
+  // Delete (confirm, then delete straight away)
+  let pendingDelete = null;
+  function askDelete(kind, id) {
+    pendingDelete = { kind, id };
+    $('delete-modal').heading = kind === 'group' ? 'Delete group' : 'Delete feature';
+    $('delete-text').textContent = kind === 'group'
+      ? 'Do you want to delete this group? This action will delete all of its containing items.'
+      : 'Do you want to delete this feature?';
+    $('delete-modal').showOverlay();
+  }
+  $('delete-confirm').addEventListener('click', () => {
+    const { kind, id } = pendingDelete;
+    commit((list) => {
+      if (kind === 'group') { const i = list.findIndex((g) => g.id === id); if (i >= 0) list.splice(i, 1); }
+      else list.forEach((g) => { g.features = g.features.filter((f) => f.id !== id); });
+    });
+    $('delete-modal').hideOverlay();
+  });
+
+  $('btn-add-group').addEventListener('click', () => openGroup(null));
+  $('btn-add-feature').addEventListener('click', () => openFeature(null, ''));
+
+  render();
+})();
+</script>
+</body>
+</html>
