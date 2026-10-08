@@ -9,68 +9,58 @@
 .fdt-review__dismiss:hover{background:var(--p-color-bg-surface-hover,#f7f7f7);color:var(--p-color-icon-secondary-hover,#616161)}
 .fdt-review__dismiss:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:1px}
 .fdt-review__heading{margin:0 28px 12px 0;font-size:14px;font-weight:600;line-height:1.35;color:var(--p-color-text,#303030);text-align:start}
-.fdt-review__thumbs{display:flex;justify-content:center;gap:16px;padding-block:0}
-.fdt-review__thumb{position:relative;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;min-width:0;padding:0;border:0;background:var(--p-color-bg-fill-brand,#303030);border-radius:50%;cursor:pointer;transition:background .15s ease-out,opacity .15s ease}
-.fdt-review__thumb:hover,.fdt-review__thumb:focus-visible{background:var(--p-color-bg-fill-brand-hover,#1a1a1a)}
-.fdt-review__thumb:active{background:var(--p-color-bg-fill-brand-active,#1a1a1a)}
-.fdt-review__thumb:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:2px}
-.fdt-review__ico{position:relative;display:block;width:24px;height:24px;color:var(--p-color-icon-inverse,#fff);flex-shrink:0;transition:transform .15s ease-out}
-.fdt-review__ico svg{position:absolute;inset:0;display:block;width:24px;height:24px}
-.fdt-review__ico-outline path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-.fdt-review__ico-filled{opacity:0;transition:opacity .2s ease}
-.fdt-review__ico-filled path{fill:currentColor}
-.fdt-review__thumb:hover .fdt-review__ico,.fdt-review__thumb:focus-visible .fdt-review__ico{transform:scale(1.1)}
-.fdt-review__thumb--up:hover .fdt-review__ico,.fdt-review__thumb--up:focus-visible .fdt-review__ico{transform:scale(1.1) rotate(-10deg)}
-.fdt-review__thumb:active .fdt-review__ico{transform:scale(.95)}
-.fdt-review__thumb.is-selected{background:var(--p-color-bg-fill-brand,#303030)}
-.fdt-review__thumb.is-selected .fdt-review__ico{color:var(--p-color-icon-inverse,#fff)}
-.fdt-review__thumb.is-selected .fdt-review__ico-outline{opacity:0}
-.fdt-review__thumb.is-selected .fdt-review__ico-filled{opacity:1}
-.fdt-review__thumbs:has(.fdt-review__thumb.is-selected) .fdt-review__thumb:not(.is-selected){opacity:.5}
-.fdt-review__press{position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:visible}
-.fdt-review__press-fill{position:absolute;inset:0;border-radius:inherit;background:var(--p-color-bg-surface,#fff);opacity:0;transition:opacity .3s ease}
-.fdt-review__thumb.is-pressing .fdt-review__press-fill{opacity:.2;transition:opacity .1s ease}
-.fdt-review__press-stroke{position:absolute;inset:0;border-radius:inherit;border:2px solid var(--p-color-border-inverse,#fff);opacity:0;transform:scale(1)}
-.fdt-review__thumb.is-anim .fdt-review__press-stroke{animation:fdt-press-ring .4s cubic-bezier(.2,0,0,1)}
-@keyframes fdt-press-ring{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
-.fdt-review__thumb.is-anim .fdt-review__ico-filled{animation:fdt-thumb-pop .4s ease-out}
-.fdt-review__thumb--down.is-anim .fdt-review__ico-filled{animation:fdt-thumb-pop-down .32s ease-out}
-.fdt-review__fx{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.fdt-review__ripple{position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid var(--p-color-text,#303030);opacity:0;transform:scale(0)}
-.fdt-review__thumb--up.is-anim .fdt-review__ripple{animation:fdt-ripple .45s ease-out}
-.fdt-review__sparks{position:absolute;inset:0}
-.fdt-review__sparks i{position:absolute;inset:0;margin:auto;width:4px;height:4px;border-radius:50%;background:var(--p-color-text,#303030);opacity:0}
-.fdt-review__sparks i:nth-child(1){--a:0deg}
-.fdt-review__sparks i:nth-child(2){--a:45deg}
-.fdt-review__sparks i:nth-child(3){--a:90deg}
-.fdt-review__sparks i:nth-child(4){--a:135deg}
-.fdt-review__sparks i:nth-child(5){--a:180deg}
-.fdt-review__sparks i:nth-child(6){--a:225deg}
-.fdt-review__sparks i:nth-child(7){--a:270deg}
-.fdt-review__sparks i:nth-child(8){--a:315deg}
-.fdt-review__thumb--up.is-anim .fdt-review__sparks i{animation:fdt-spark .45s ease-out}
-@keyframes fdt-thumb-pop{0%{transform:scale(1) rotate(0)}30%{transform:scale(1.25) rotate(-12deg)}60%{transform:scale(1.08) rotate(0)}100%{transform:scale(1) rotate(0)}}
-@keyframes fdt-thumb-pop-down{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
-@keyframes fdt-ripple{0%{transform:scale(.3);opacity:.4}100%{transform:scale(1.6);opacity:0}}
-@keyframes fdt-spark{0%{transform:rotate(var(--a)) translateY(-6px) scale(1);opacity:.9}100%{transform:rotate(var(--a)) translateY(-18px) scale(.2);opacity:0}}
-/* Firework / confetti burst (thumbs up) — particles spawned by review.js */
-.fdt-review__confetti{position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;pointer-events:none;overflow:visible;z-index:1}
-.fdt-review__confetti i{position:absolute;left:0;top:0;opacity:0;will-change:transform,opacity}
-.fdt-review__confetti i.dot{width:var(--sz,5px);height:var(--sz,5px);border-radius:50%}
-.fdt-review__confetti i.streak{width:2px;height:8px;border-radius:1px}
-.fdt-review__confetti i.go{animation:fdt-confetti var(--dur,700ms) ease-out forwards}
-@keyframes fdt-confetti{0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) rotate(var(--rot,0deg)) scale(1)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--tx,0),var(--ty,0)) rotate(var(--rot,0deg)) scale(0)}}
+/* Wave the hand twice each time the thumbs card appears. */
+.fdt-review__wave{display:inline-block;transform-origin:70% 70%}
+.fdt-review__card--thumbs.fdt-fade-in .fdt-review__wave{animation:fdt-wave 1.2s ease-in-out .3s}
+@keyframes fdt-wave{0%,60%,100%{transform:rotate(0)}10%,30%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}}
+.fdt-review__rate-heading{margin:0;padding-inline-end:32px;font-size:14px;font-weight:650;line-height:20px;color:var(--p-color-text,#303030);text-align:start;text-wrap:balance}
+.fdt-review__rate-text{margin:4px 0 0;padding-inline-end:32px;font-size:14px;font-weight:400;line-height:20px;color:var(--p-color-text-secondary,#616161);text-align:start;text-wrap:balance}
+.fdt-review__rate-actions{margin-block-start:12px}
+/* X centred on the 20px heading line (16px padding + 10px − 14px). */
+.fdt-review__card--rate .fdt-review__dismiss{inset-block-start:12px}
+/* YouTube-style segmented pill: one rounded container, 1px divider between up and down. */
+.fdt-review__thumbs{display:flex;width:fit-content;margin-inline:auto;padding-block:0;border:1px solid var(--p-color-border,#e3e3e3);border-radius:999px;background:var(--p-color-bg-fill-secondary,#f1f1f1);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+/* YouTube-style thumbs: outline idle, solid when picked. Timing lives in these vars. */
+.fdt-review{--fdt-hover-dur:150ms;--fdt-pop-dur:400ms;--fdt-pop-ease:cubic-bezier(.34,1.56,.64,1);--fdt-pop-tilt-up:-15deg;--fdt-pop-tilt-down:15deg;--fdt-fill-dur:120ms;--fdt-ripple-dur:500ms;--fdt-streak-dur:550ms;--fdt-spark-dur:600ms;--fdt-note-dur:1100ms}
+.fdt-review__thumb{--fdt-seg-bg:var(--p-color-bg-fill-secondary,#f1f1f1);position:relative;display:grid;place-items:center;min-width:0;padding:8px 16px;border:0;border-radius:0;background:var(--fdt-seg-bg);color:var(--p-color-text,#303030);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color var(--fdt-hover-dur) ease}
+.fdt-review__thumb:first-child{border-radius:999px 0 0 999px}
+.fdt-review__thumb:last-child{border-radius:0 999px 999px 0}
+.fdt-review__thumb+.fdt-review__thumb::before{content:"";position:absolute;inset-block:8px;inset-inline-start:0;width:1px;background:var(--p-color-border,#d4d4d4)}
+.fdt-review__thumb:hover{--fdt-seg-bg:var(--p-color-bg-fill-secondary-hover,#e5e5e5)}
+.fdt-review__thumb:active,.fdt-review__thumb[aria-pressed=true]{--fdt-seg-bg:var(--p-color-bg-fill-secondary-active,#dcdcdc)}
+.fdt-review__thumb:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:2px;z-index:2}
+.fdt-review__thumb[aria-disabled=true]{cursor:default}
+.fdt-review__thumb[aria-disabled=true][aria-pressed=false]:hover{--fdt-seg-bg:var(--p-color-bg-fill-secondary,#f1f1f1)}
+.fdt-review__thumbs:has(.fdt-review__thumb[aria-pressed=true]) .fdt-review__thumb[aria-pressed=false] .fdt-review__ico{opacity:.5}
+.fdt-review__ico{position:relative;z-index:2;display:block;width:24px;height:24px;overflow:visible}
+.fdt-review__ico .body{fill:transparent;stroke:currentColor;stroke-width:1.75;stroke-linejoin:round;stroke-linecap:round;transition:fill var(--fdt-fill-dur) ease}
+.fdt-review__ico .cuff{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;transition:stroke var(--fdt-fill-dur) ease}
+.fdt-review__thumb[aria-pressed=true] .fdt-review__ico .body{fill:currentColor}
+.fdt-review__thumb[aria-pressed=true] .fdt-review__ico .cuff{stroke:var(--fdt-seg-bg)}
+.fdt-review__thumb--up.is-anim .fdt-review__ico{animation:fdt-pop-up var(--fdt-pop-dur) var(--fdt-pop-ease) both;transform-origin:40% 70%}
+.fdt-review__thumb--down.is-anim .fdt-review__ico{animation:fdt-pop-down var(--fdt-pop-dur) var(--fdt-pop-ease) both;transform-origin:60% 30%}
+@keyframes fdt-pop-up{0%{transform:scale(1) rotate(0)}25%{transform:scale(.8) rotate(var(--fdt-pop-tilt-up))}60%{transform:scale(1.2) rotate(var(--fdt-pop-tilt-up))}100%{transform:scale(1) rotate(0)}}
+@keyframes fdt-pop-down{0%{transform:scale(1) rotate(0)}25%{transform:scale(.8) rotate(var(--fdt-pop-tilt-down))}60%{transform:scale(1.2) rotate(var(--fdt-pop-tilt-down))}100%{transform:scale(1) rotate(0)}}
+/* Ripple ring + burst are spawned by review.js and removed when they finish. */
+.fdt-review__ripple{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:2px solid var(--p-color-text,#303030);pointer-events:none;animation:fdt-ripple var(--fdt-ripple-dur) cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes fdt-ripple{from{transform:scale(.6);opacity:.45}to{transform:scale(1.7);opacity:0}}
+/* Burst (thumbs up): firework streaks → twinkling sparks → floating notes, behind the icon. */
+.fdt-review__burst{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:1}
+.fdt-review__burst>*{position:absolute;left:0;top:0}
+.fdt-review__streak{width:2px;height:var(--len);margin-left:-1px;border-radius:2px;background:linear-gradient(to bottom,transparent,var(--c));transform-origin:50% 0;animation:fdt-streak var(--fdt-streak-dur) cubic-bezier(.15,.8,.3,1) var(--delay) both}
+@keyframes fdt-streak{0%{transform:rotate(var(--a)) translateY(4px) scaleY(.2);opacity:0}20%{opacity:1}55%{transform:rotate(var(--a)) translateY(calc(var(--dist) * .7)) scaleY(1);opacity:1}100%{transform:rotate(var(--a)) translateY(var(--dist)) scaleY(0);opacity:0}}
+.fdt-review__spark{width:var(--size);height:var(--size);margin:calc(var(--size) / -2) 0 0 calc(var(--size) / -2);background:var(--c);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:fdt-spark var(--fdt-spark-dur) ease-out var(--delay) both}
+@keyframes fdt-spark{0%{transform:translate(var(--x),var(--y)) scale(0) rotate(0);opacity:1}30%{transform:translate(var(--x),var(--y)) scale(1.2) rotate(45deg);opacity:1}50%{opacity:.3}65%{opacity:1}100%{transform:translate(calc(var(--x) * 1.15),calc(var(--y) * 1.15 + 6px)) scale(0) rotate(90deg);opacity:0}}
+.fdt-review__note{width:var(--size);height:var(--size);margin:calc(var(--size) / -2) 0 0 calc(var(--size) / -2);color:var(--c);animation:fdt-note var(--fdt-note-dur) cubic-bezier(.3,.6,.4,1) var(--delay) both}
+.fdt-review__note svg{display:block;width:100%;height:100%;fill:currentColor}
+@keyframes fdt-note{0%{transform:translate(calc(var(--x) * .3),-6px) scale(.3) rotate(0);opacity:0}15%{transform:translate(calc(var(--x) * .6),calc(var(--rise) * .35)) scale(1) rotate(calc(var(--r) * -1));opacity:1}40%{transform:translate(calc(var(--x) * .8 + var(--sway)),calc(var(--rise) * .55)) scale(1) rotate(var(--r))}65%{transform:translate(calc(var(--x) - var(--sway)),calc(var(--rise) * .75)) scale(.95) rotate(calc(var(--r) * -1));opacity:1}100%{transform:translate(calc(var(--x) * 1.1 + var(--sway)),var(--rise)) scale(.7) rotate(var(--r));opacity:0}}
 .fdt-fade-in{animation:fdt-fade-in .2s ease}
 @keyframes fdt-fade-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){
-.fdt-review__ico-filled,.fdt-review__thumb,.fdt-review__dismiss{transition:none}
-.fdt-review__thumb.is-anim .fdt-review__ico-filled,.fdt-review__thumb--up.is-anim .fdt-review__ripple,.fdt-review__thumb--up.is-anim .fdt-review__sparks i,.fdt-review__thumb--down.is-anim .fdt-review__ico-filled{animation:none}
-.fdt-review__ripple,.fdt-review__sparks,.fdt-review__confetti{display:none}
-.fdt-review__ico{transition:color .15s ease-out}
-.fdt-review__press-fill{transition:none;opacity:0}
-.fdt-review__thumb.is-pressing .fdt-review__press-fill{opacity:0}
-.fdt-review__thumb.is-anim .fdt-review__press-stroke{animation:none}
-.fdt-review__thumb:hover .fdt-review__ico,.fdt-review__thumb:focus-visible .fdt-review__ico,.fdt-review__thumb--up:hover .fdt-review__ico,.fdt-review__thumb--up:focus-visible .fdt-review__ico,.fdt-review__thumb:active .fdt-review__ico{transform:none}
+.fdt-review__thumb,.fdt-review__dismiss,.fdt-review__ico .body,.fdt-review__ico .cuff{transition:none}
+.fdt-review__thumb.is-anim .fdt-review__ico{animation:none}
+.fdt-review__card--thumbs.fdt-fade-in .fdt-review__wave{animation:none}
+.fdt-review__ripple,.fdt-review__burst{display:none}
 .fdt-review__feedback-btn,.fdt-review__feedback-btn-ico{transition:background .15s ease-out}
 .fdt-review__feedback-btn:hover .fdt-review__feedback-btn-ico,.fdt-review__feedback-btn:active{transform:none}
 .fdt-fade-in{animation:none}

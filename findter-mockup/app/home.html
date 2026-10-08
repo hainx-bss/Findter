@@ -22,68 +22,58 @@
 .fdt-review__dismiss:hover{background:var(--p-color-bg-surface-hover,#f7f7f7);color:var(--p-color-icon-secondary-hover,#616161)}
 .fdt-review__dismiss:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:1px}
 .fdt-review__heading{margin:0 28px 12px 0;font-size:14px;font-weight:600;line-height:1.35;color:var(--p-color-text,#303030);text-align:start}
-.fdt-review__thumbs{display:flex;justify-content:center;gap:16px;padding-block:0}
-.fdt-review__thumb{position:relative;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;min-width:0;padding:0;border:0;background:var(--p-color-bg-fill-brand,#303030);border-radius:50%;cursor:pointer;transition:background .15s ease-out,opacity .15s ease}
-.fdt-review__thumb:hover,.fdt-review__thumb:focus-visible{background:var(--p-color-bg-fill-brand-hover,#1a1a1a)}
-.fdt-review__thumb:active{background:var(--p-color-bg-fill-brand-active,#1a1a1a)}
-.fdt-review__thumb:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:2px}
-.fdt-review__ico{position:relative;display:block;width:24px;height:24px;color:var(--p-color-icon-inverse,#fff);flex-shrink:0;transition:transform .15s ease-out}
-.fdt-review__ico svg{position:absolute;inset:0;display:block;width:24px;height:24px}
-.fdt-review__ico-outline path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-.fdt-review__ico-filled{opacity:0;transition:opacity .2s ease}
-.fdt-review__ico-filled path{fill:currentColor}
-.fdt-review__thumb:hover .fdt-review__ico,.fdt-review__thumb:focus-visible .fdt-review__ico{transform:scale(1.1)}
-.fdt-review__thumb--up:hover .fdt-review__ico,.fdt-review__thumb--up:focus-visible .fdt-review__ico{transform:scale(1.1) rotate(-10deg)}
-.fdt-review__thumb:active .fdt-review__ico{transform:scale(.95)}
-.fdt-review__thumb.is-selected{background:var(--p-color-bg-fill-brand,#303030)}
-.fdt-review__thumb.is-selected .fdt-review__ico{color:var(--p-color-icon-inverse,#fff)}
-.fdt-review__thumb.is-selected .fdt-review__ico-outline{opacity:0}
-.fdt-review__thumb.is-selected .fdt-review__ico-filled{opacity:1}
-.fdt-review__thumbs:has(.fdt-review__thumb.is-selected) .fdt-review__thumb:not(.is-selected){opacity:.5}
-.fdt-review__press{position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:visible}
-.fdt-review__press-fill{position:absolute;inset:0;border-radius:inherit;background:var(--p-color-bg-surface,#fff);opacity:0;transition:opacity .3s ease}
-.fdt-review__thumb.is-pressing .fdt-review__press-fill{opacity:.2;transition:opacity .1s ease}
-.fdt-review__press-stroke{position:absolute;inset:0;border-radius:inherit;border:2px solid var(--p-color-border-inverse,#fff);opacity:0;transform:scale(1)}
-.fdt-review__thumb.is-anim .fdt-review__press-stroke{animation:fdt-press-ring .4s cubic-bezier(.2,0,0,1)}
-@keyframes fdt-press-ring{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
-.fdt-review__thumb.is-anim .fdt-review__ico-filled{animation:fdt-thumb-pop .4s ease-out}
-.fdt-review__thumb--down.is-anim .fdt-review__ico-filled{animation:fdt-thumb-pop-down .32s ease-out}
-.fdt-review__fx{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.fdt-review__ripple{position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid var(--p-color-text,#303030);opacity:0;transform:scale(0)}
-.fdt-review__thumb--up.is-anim .fdt-review__ripple{animation:fdt-ripple .45s ease-out}
-.fdt-review__sparks{position:absolute;inset:0}
-.fdt-review__sparks i{position:absolute;inset:0;margin:auto;width:4px;height:4px;border-radius:50%;background:var(--p-color-text,#303030);opacity:0}
-.fdt-review__sparks i:nth-child(1){--a:0deg}
-.fdt-review__sparks i:nth-child(2){--a:45deg}
-.fdt-review__sparks i:nth-child(3){--a:90deg}
-.fdt-review__sparks i:nth-child(4){--a:135deg}
-.fdt-review__sparks i:nth-child(5){--a:180deg}
-.fdt-review__sparks i:nth-child(6){--a:225deg}
-.fdt-review__sparks i:nth-child(7){--a:270deg}
-.fdt-review__sparks i:nth-child(8){--a:315deg}
-.fdt-review__thumb--up.is-anim .fdt-review__sparks i{animation:fdt-spark .45s ease-out}
-@keyframes fdt-thumb-pop{0%{transform:scale(1) rotate(0)}30%{transform:scale(1.25) rotate(-12deg)}60%{transform:scale(1.08) rotate(0)}100%{transform:scale(1) rotate(0)}}
-@keyframes fdt-thumb-pop-down{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
-@keyframes fdt-ripple{0%{transform:scale(.3);opacity:.4}100%{transform:scale(1.6);opacity:0}}
-@keyframes fdt-spark{0%{transform:rotate(var(--a)) translateY(-6px) scale(1);opacity:.9}100%{transform:rotate(var(--a)) translateY(-18px) scale(.2);opacity:0}}
-/* Firework / confetti burst (thumbs up) — particles spawned by review.js */
-.fdt-review__confetti{position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;pointer-events:none;overflow:visible;z-index:1}
-.fdt-review__confetti i{position:absolute;left:0;top:0;opacity:0;will-change:transform,opacity}
-.fdt-review__confetti i.dot{width:var(--sz,5px);height:var(--sz,5px);border-radius:50%}
-.fdt-review__confetti i.streak{width:2px;height:8px;border-radius:1px}
-.fdt-review__confetti i.go{animation:fdt-confetti var(--dur,700ms) ease-out forwards}
-@keyframes fdt-confetti{0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) rotate(var(--rot,0deg)) scale(1)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--tx,0),var(--ty,0)) rotate(var(--rot,0deg)) scale(0)}}
+/* Wave the hand twice each time the thumbs card appears. */
+.fdt-review__wave{display:inline-block;transform-origin:70% 70%}
+.fdt-review__card--thumbs.fdt-fade-in .fdt-review__wave{animation:fdt-wave 1.2s ease-in-out .3s}
+@keyframes fdt-wave{0%,60%,100%{transform:rotate(0)}10%,30%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}}
+.fdt-review__rate-heading{margin:0;padding-inline-end:32px;font-size:14px;font-weight:650;line-height:20px;color:var(--p-color-text,#303030);text-align:start;text-wrap:balance}
+.fdt-review__rate-text{margin:4px 0 0;padding-inline-end:32px;font-size:14px;font-weight:400;line-height:20px;color:var(--p-color-text-secondary,#616161);text-align:start;text-wrap:balance}
+.fdt-review__rate-actions{margin-block-start:12px}
+/* X centred on the 20px heading line (16px padding + 10px − 14px). */
+.fdt-review__card--rate .fdt-review__dismiss{inset-block-start:12px}
+/* YouTube-style segmented pill: one rounded container, 1px divider between up and down. */
+.fdt-review__thumbs{display:flex;width:fit-content;margin-inline:auto;padding-block:0;border:1px solid var(--p-color-border,#e3e3e3);border-radius:999px;background:var(--p-color-bg-fill-secondary,#f1f1f1);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+/* YouTube-style thumbs: outline idle, solid when picked. Timing lives in these vars. */
+.fdt-review{--fdt-hover-dur:150ms;--fdt-pop-dur:400ms;--fdt-pop-ease:cubic-bezier(.34,1.56,.64,1);--fdt-pop-tilt-up:-15deg;--fdt-pop-tilt-down:15deg;--fdt-fill-dur:120ms;--fdt-ripple-dur:500ms;--fdt-streak-dur:550ms;--fdt-spark-dur:600ms;--fdt-note-dur:1100ms}
+.fdt-review__thumb{--fdt-seg-bg:var(--p-color-bg-fill-secondary,#f1f1f1);position:relative;display:grid;place-items:center;min-width:0;padding:8px 16px;border:0;border-radius:0;background:var(--fdt-seg-bg);color:var(--p-color-text,#303030);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color var(--fdt-hover-dur) ease}
+.fdt-review__thumb:first-child{border-radius:999px 0 0 999px}
+.fdt-review__thumb:last-child{border-radius:0 999px 999px 0}
+.fdt-review__thumb+.fdt-review__thumb::before{content:"";position:absolute;inset-block:8px;inset-inline-start:0;width:1px;background:var(--p-color-border,#d4d4d4)}
+.fdt-review__thumb:hover{--fdt-seg-bg:var(--p-color-bg-fill-secondary-hover,#e5e5e5)}
+.fdt-review__thumb:active,.fdt-review__thumb[aria-pressed=true]{--fdt-seg-bg:var(--p-color-bg-fill-secondary-active,#dcdcdc)}
+.fdt-review__thumb:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:2px;z-index:2}
+.fdt-review__thumb[aria-disabled=true]{cursor:default}
+.fdt-review__thumb[aria-disabled=true][aria-pressed=false]:hover{--fdt-seg-bg:var(--p-color-bg-fill-secondary,#f1f1f1)}
+.fdt-review__thumbs:has(.fdt-review__thumb[aria-pressed=true]) .fdt-review__thumb[aria-pressed=false] .fdt-review__ico{opacity:.5}
+.fdt-review__ico{position:relative;z-index:2;display:block;width:24px;height:24px;overflow:visible}
+.fdt-review__ico .body{fill:transparent;stroke:currentColor;stroke-width:1.75;stroke-linejoin:round;stroke-linecap:round;transition:fill var(--fdt-fill-dur) ease}
+.fdt-review__ico .cuff{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;transition:stroke var(--fdt-fill-dur) ease}
+.fdt-review__thumb[aria-pressed=true] .fdt-review__ico .body{fill:currentColor}
+.fdt-review__thumb[aria-pressed=true] .fdt-review__ico .cuff{stroke:var(--fdt-seg-bg)}
+.fdt-review__thumb--up.is-anim .fdt-review__ico{animation:fdt-pop-up var(--fdt-pop-dur) var(--fdt-pop-ease) both;transform-origin:40% 70%}
+.fdt-review__thumb--down.is-anim .fdt-review__ico{animation:fdt-pop-down var(--fdt-pop-dur) var(--fdt-pop-ease) both;transform-origin:60% 30%}
+@keyframes fdt-pop-up{0%{transform:scale(1) rotate(0)}25%{transform:scale(.8) rotate(var(--fdt-pop-tilt-up))}60%{transform:scale(1.2) rotate(var(--fdt-pop-tilt-up))}100%{transform:scale(1) rotate(0)}}
+@keyframes fdt-pop-down{0%{transform:scale(1) rotate(0)}25%{transform:scale(.8) rotate(var(--fdt-pop-tilt-down))}60%{transform:scale(1.2) rotate(var(--fdt-pop-tilt-down))}100%{transform:scale(1) rotate(0)}}
+/* Ripple ring + burst are spawned by review.js and removed when they finish. */
+.fdt-review__ripple{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:2px solid var(--p-color-text,#303030);pointer-events:none;animation:fdt-ripple var(--fdt-ripple-dur) cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes fdt-ripple{from{transform:scale(.6);opacity:.45}to{transform:scale(1.7);opacity:0}}
+/* Burst (thumbs up): firework streaks → twinkling sparks → floating notes, behind the icon. */
+.fdt-review__burst{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:1}
+.fdt-review__burst>*{position:absolute;left:0;top:0}
+.fdt-review__streak{width:2px;height:var(--len);margin-left:-1px;border-radius:2px;background:linear-gradient(to bottom,transparent,var(--c));transform-origin:50% 0;animation:fdt-streak var(--fdt-streak-dur) cubic-bezier(.15,.8,.3,1) var(--delay) both}
+@keyframes fdt-streak{0%{transform:rotate(var(--a)) translateY(4px) scaleY(.2);opacity:0}20%{opacity:1}55%{transform:rotate(var(--a)) translateY(calc(var(--dist) * .7)) scaleY(1);opacity:1}100%{transform:rotate(var(--a)) translateY(var(--dist)) scaleY(0);opacity:0}}
+.fdt-review__spark{width:var(--size);height:var(--size);margin:calc(var(--size) / -2) 0 0 calc(var(--size) / -2);background:var(--c);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:fdt-spark var(--fdt-spark-dur) ease-out var(--delay) both}
+@keyframes fdt-spark{0%{transform:translate(var(--x),var(--y)) scale(0) rotate(0);opacity:1}30%{transform:translate(var(--x),var(--y)) scale(1.2) rotate(45deg);opacity:1}50%{opacity:.3}65%{opacity:1}100%{transform:translate(calc(var(--x) * 1.15),calc(var(--y) * 1.15 + 6px)) scale(0) rotate(90deg);opacity:0}}
+.fdt-review__note{width:var(--size);height:var(--size);margin:calc(var(--size) / -2) 0 0 calc(var(--size) / -2);color:var(--c);animation:fdt-note var(--fdt-note-dur) cubic-bezier(.3,.6,.4,1) var(--delay) both}
+.fdt-review__note svg{display:block;width:100%;height:100%;fill:currentColor}
+@keyframes fdt-note{0%{transform:translate(calc(var(--x) * .3),-6px) scale(.3) rotate(0);opacity:0}15%{transform:translate(calc(var(--x) * .6),calc(var(--rise) * .35)) scale(1) rotate(calc(var(--r) * -1));opacity:1}40%{transform:translate(calc(var(--x) * .8 + var(--sway)),calc(var(--rise) * .55)) scale(1) rotate(var(--r))}65%{transform:translate(calc(var(--x) - var(--sway)),calc(var(--rise) * .75)) scale(.95) rotate(calc(var(--r) * -1));opacity:1}100%{transform:translate(calc(var(--x) * 1.1 + var(--sway)),var(--rise)) scale(.7) rotate(var(--r));opacity:0}}
 .fdt-fade-in{animation:fdt-fade-in .2s ease}
 @keyframes fdt-fade-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){
-.fdt-review__ico-filled,.fdt-review__thumb,.fdt-review__dismiss{transition:none}
-.fdt-review__thumb.is-anim .fdt-review__ico-filled,.fdt-review__thumb--up.is-anim .fdt-review__ripple,.fdt-review__thumb--up.is-anim .fdt-review__sparks i,.fdt-review__thumb--down.is-anim .fdt-review__ico-filled{animation:none}
-.fdt-review__ripple,.fdt-review__sparks,.fdt-review__confetti{display:none}
-.fdt-review__ico{transition:color .15s ease-out}
-.fdt-review__press-fill{transition:none;opacity:0}
-.fdt-review__thumb.is-pressing .fdt-review__press-fill{opacity:0}
-.fdt-review__thumb.is-anim .fdt-review__press-stroke{animation:none}
-.fdt-review__thumb:hover .fdt-review__ico,.fdt-review__thumb:focus-visible .fdt-review__ico,.fdt-review__thumb--up:hover .fdt-review__ico,.fdt-review__thumb--up:focus-visible .fdt-review__ico,.fdt-review__thumb:active .fdt-review__ico{transform:none}
+.fdt-review__thumb,.fdt-review__dismiss,.fdt-review__ico .body,.fdt-review__ico .cuff{transition:none}
+.fdt-review__thumb.is-anim .fdt-review__ico{animation:none}
+.fdt-review__card--thumbs.fdt-fade-in .fdt-review__wave{animation:none}
+.fdt-review__ripple,.fdt-review__burst{display:none}
 .fdt-review__feedback-btn,.fdt-review__feedback-btn-ico{transition:background .15s ease-out}
 .fdt-review__feedback-btn:hover .fdt-review__feedback-btn-ico,.fdt-review__feedback-btn:active{transform:none}
 .fdt-fade-in{animation:none}
@@ -1269,26 +1259,35 @@
     <button type="button" class="fdt-review__dismiss" data-action="dismiss-banner" aria-label="Dismiss">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
-    <p class="fdt-review__heading">How's Findter working for you so far?</p>
+    <p class="fdt-review__heading"><span class="fdt-review__wave" aria-hidden="true">👋</span> How's Findter working for you?</p>
     <div class="fdt-review__thumbs" role="group" aria-label="Review or send feedback">
       <button type="button" class="fdt-review__thumb fdt-review__thumb--up" data-action="review-path" data-hover="thumbs_up" aria-label="Helpful" aria-pressed="false">
-        <span class="fdt-review__press" aria-hidden="true"><span class="fdt-review__press-fill"></span><span class="fdt-review__press-stroke"></span></span>
-        <span class="fdt-review__ico">
-          <span class="fdt-review__fx" aria-hidden="true">
-            <span class="fdt-review__ripple"></span>
-            <span class="fdt-review__sparks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          </span>
-          <svg class="fdt-review__ico-outline" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-          <svg class="fdt-review__ico-filled" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-        </span>
+        <svg class="fdt-review__ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="body" d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88L14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H7"/>
+          <path class="cuff" d="M7 10v12"/>
+        </svg>
       </button>
       <button type="button" class="fdt-review__thumb fdt-review__thumb--down" data-action="feedback-path" data-hover="thumbs_down" aria-label="Not helpful" aria-pressed="false">
-        <span class="fdt-review__press" aria-hidden="true"><span class="fdt-review__press-fill"></span><span class="fdt-review__press-stroke"></span></span>
-        <span class="fdt-review__ico">
-          <svg class="fdt-review__ico-outline" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
-          <svg class="fdt-review__ico-filled" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
-        </span>
+        <svg class="fdt-review__ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="body" d="M17 14V2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H17"/>
+          <path class="cuff" d="M17 14V2"/>
+        </svg>
       </button>
+    </div>
+  </div>
+
+  <!-- Rate prompt (UI-05): replaces the thumbs in the same card after the thumbs-up hold. -->
+  <div class="fdt-review__card fdt-review__card--rate" data-view="rate" hidden>
+    <button type="button" class="fdt-review__dismiss" data-action="dismiss-rate" aria-label="Dismiss">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
+    <p class="fdt-review__rate-heading">Love Findter?</p>
+    <p class="fdt-review__rate-text">Rate us on the App Store.</p>
+    <div class="fdt-review__rate-actions">
+      <s-stack direction="inline" gap="small-200" justifyContent="end" alignItems="center">
+        <s-button data-action="rate-no-thanks">Later</s-button>
+        <s-button data-action="rate-take-me" variant="primary">Rate Findter</s-button>
+      </s-stack>
     </div>
   </div>
 
@@ -1860,14 +1859,16 @@
   var SHOP = "khgym6-d1.myshopify.com";
   var STORAGE_KEY = "findter.review.banner.v1." + SHOP;
   var LISTING =
-    "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal&st_campaign=rate-app&st_source=admin-web";
+    "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal";
   var THANKS_MS = 10000;
   var INSTALL_DAYS = 14;
   // Hold the thumbs card after a click so the press/pop/confetti finishes,
-  // then move to the review step (and open the listing). Reduced-motion is shorter.
+  // then open the rate modal (UI-05). Reduced-motion is shorter.
   // >>> Tune the step delay here <<<
-  var FEEDBACK_TRANSITION_DELAY = 3000;
+  var FEEDBACK_TRANSITION_DELAY = 1500;
   var FEEDBACK_TRANSITION_DELAY_REDUCED = 600;
+  // Thumb down: let the pop finish before the modal covers it.
+  var THUMB_DOWN_MODAL_DELAY = 400;
 
   var params = new URLSearchParams(location.search);
   // Parent page may pass query via iframe — also check parent
@@ -1882,7 +1883,6 @@
 
   var isDevStore = params.get("store") === "dev";
   var forceFail = params.get("reviewFail") === "1";
-  var forceApiOff = params.get("reviewsApi") === "0";
   var demo = params.get("review") || "";
 
   var events = [];
@@ -1896,8 +1896,7 @@
   var thumbsLocked = false;
 
   var root = document.getElementById("fdt-review-root");
-  var modal = document.getElementById("fdt-feedback-modal");
-  var categoryEl = document.getElementById("fdt-feedback-category");
+  var modal = document.getElementById("fdt-feedback-modal");  var categoryEl = document.getElementById("fdt-feedback-category");
   var messageEl = document.getElementById("fdt-feedback-message");
   var fileEl = document.getElementById("fdt-feedback-file");
   var errorEl = document.getElementById("fdt-feedback-error");
@@ -2004,7 +2003,7 @@
   }
 
   function showView(name) {
-    ["thumbs", "thanks", "feedback"].forEach(function (key) {
+    ["thumbs", "rate", "thanks", "feedback"].forEach(function (key) {
       var el = view(key);
       if (!el) return;
       var show = key === name;
@@ -2032,7 +2031,7 @@
     if (!root) return;
     var btns = root.querySelectorAll(".fdt-review__thumb");
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.remove("is-selected", "is-anim", "is-pressing");
+      btns[i].classList.remove("is-selected", "is-anim");
       btns[i].setAttribute("aria-pressed", "false");
       btns[i].removeAttribute("aria-disabled");
     }
@@ -2047,44 +2046,103 @@
     }
   }
 
-  // Colored firework/confetti burst for thumbs up (Polaris token palette only).
-  // >>> Tune particle count, colors and duration here <<<
-  function spawnConfetti(btn) {
+  // Ring that expands from the button on select.
+  function spawnRipple(btn) {
     if (!btn || prefersReducedMotion()) return;
-    var colors = [
-      "--p-color-bg-fill-success",
-      "--p-color-bg-fill-info",
-      "--p-color-bg-fill-warning",
-      "--p-color-bg-fill-critical",
-      "--p-color-bg-fill-caution"
-    ];
-    function burst(count, scale) {
-      var layer = document.createElement("span");
-      layer.className = "fdt-review__confetti";
-      layer.setAttribute("aria-hidden", "true");
-      for (var i = 0; i < count; i++) {
-        var p = document.createElement("i");
-        var isStreak = Math.random() < 0.4;
-        var ang = (Math.PI * 2) * (i / count) + (Math.random() - 0.5) * 0.6;
-        var dist = (24 + Math.random() * 24) * scale; // 24–48px
-        p.className = isStreak ? "streak go" : "dot go";
-        p.style.setProperty("--tx", (Math.cos(ang) * dist).toFixed(1) + "px");
-        p.style.setProperty("--ty", (Math.sin(ang) * dist).toFixed(1) + "px");
-        p.style.setProperty("--rot", (ang * 180 / Math.PI + 90).toFixed(0) + "deg");
-        if (!isStreak) p.style.setProperty("--sz", (4 + Math.random() * 2).toFixed(0) + "px");
-        p.style.setProperty("--dur", (640 + Math.random() * 120).toFixed(0) + "ms");
-        p.style.background = "var(" + colors[Math.floor(Math.random() * colors.length)] + ")";
-        layer.appendChild(p);
-      }
-      btn.appendChild(layer);
-      setTimeout(function () {
-        if (layer.parentNode) layer.parentNode.removeChild(layer);
-      }, 1000);
-    }
-    burst(14, 1);
-    setTimeout(function () { burst(8, 0.7); }, 150);
+    var ring = document.createElement("span");
+    ring.className = "fdt-review__ripple";
+    ring.setAttribute("aria-hidden", "true");
+    ring.addEventListener("animationend", function () { ring.remove(); });
+    btn.appendChild(ring);
   }
 
+  // Thumbs-up burst: firework streaks, twinkling sparks at their tips, then
+  // music notes floating up. Polaris fill tokens only.
+  // >>> Tune counts, distances and colors here; durations are CSS vars on .fdt-review <<<
+  var BURST_STREAKS = 12;
+  var BURST_STREAK_DIST = [22, 34]; // px from centre
+  var BURST_SPARKS = 8;
+  var BURST_NOTES = 3;
+  var BURST_COLORS = [
+    "var(--p-color-bg-fill-info, #005bd3)",
+    "var(--p-color-bg-fill-success, #29845a)",
+    "var(--p-color-bg-fill-warning, #ffb800)",
+    "var(--p-color-bg-fill-critical, #e51c00)",
+    "var(--p-color-bg-fill-magic, #8051ff)"
+  ];
+  var NOTE_SVGS = [
+    // eighth note
+    '<svg viewBox="0 0 16 16"><ellipse cx="5" cy="12.5" rx="3.2" ry="2.3" transform="rotate(-20 5 12.5)"/><rect x="7.1" y="1.5" width="1.5" height="11"/><path d="M8.6 1.5c.3 2.6 4.6 3.4 3.4 7.6 2.4-4.4-1.5-5.6-3.4-7.6z"/></svg>',
+    // beamed notes
+    '<svg viewBox="0 0 16 16"><ellipse cx="3.6" cy="13" rx="2.6" ry="1.9" transform="rotate(-20 3.6 13)"/><ellipse cx="12" cy="11.2" rx="2.6" ry="1.9" transform="rotate(-20 12 11.2)"/><rect x="5.4" y="3.2" width="1.3" height="9.6"/><rect x="13.8" y="1.4" width="1.3" height="9.6"/><path d="M5.4 3.2 15.1 1.4v2.6L5.4 5.8z"/></svg>'
+  ];
+
+  function spawnBurst(btn) {
+    if (!btn || prefersReducedMotion()) return;
+    var wrap = document.createElement("span");
+    wrap.className = "fdt-review__burst";
+    wrap.setAttribute("aria-hidden", "true");
+    var pending = 0;
+    function rand(min, max) { return min + Math.random() * (max - min); }
+    function color(i) { return BURST_COLORS[i % BURST_COLORS.length]; }
+    function add(cls, vars, html) {
+      var el = document.createElement(html ? "span" : "i");
+      el.className = cls;
+      if (html) el.innerHTML = html;
+      Object.keys(vars).forEach(function (k) { el.style.setProperty(k, vars[k]); });
+      el.addEventListener("animationend", function () {
+        if (--pending === 0) wrap.remove();
+      });
+      pending++;
+      wrap.appendChild(el);
+    }
+
+    // 1. Streaks, evenly spread with a little jitter; start as the icon squashes.
+    var tips = [];
+    for (var i = 0; i < BURST_STREAKS; i++) {
+      var a = (i / BURST_STREAKS) * 360 + rand(-8, 8);
+      var dist = rand(BURST_STREAK_DIST[0], BURST_STREAK_DIST[1]);
+      tips.push({ a: a, dist: dist });
+      add("fdt-review__streak", {
+        "--a": a + "deg",
+        "--dist": dist + "px",
+        "--len": rand(7, 11) + "px",
+        "--delay": Math.round(rand(50, 80)) + "ms",
+        "--c": color(i)
+      });
+    }
+
+    // 2. Sparks at a random subset of streak tips, as the streaks fade.
+    tips.sort(function () { return Math.random() - 0.5; });
+    tips.slice(0, BURST_SPARKS).forEach(function (tip, i) {
+      var rad = tip.a * Math.PI / 180; // CSS rotate(a) sends +Y to (-sin a, cos a)
+      add("fdt-review__spark", {
+        "--x": (-Math.sin(rad) * (tip.dist + 4)) + "px",
+        "--y": (Math.cos(rad) * (tip.dist + 4)) + "px",
+        "--size": rand(5, 8) + "px",
+        "--delay": Math.round(rand(220, 320)) + "ms",
+        "--c": color(i + 2)
+      });
+    });
+
+    // 3. Notes drifting up, fanned left / centre / right.
+    for (var n = 0; n < BURST_NOTES; n++) {
+      var side = BURST_NOTES === 1 ? 0 : (n / (BURST_NOTES - 1)) * 2 - 1; // -1 … 1
+      add("fdt-review__note", {
+        "--x": (side * 24 + rand(-3, 3)) + "px",
+        "--sway": (rand(4, 7) * (n % 2 ? 1 : -1)) + "px",
+        "--rise": -rand(30, 36) + "px", // stays under the heading
+        "--r": rand(10, 18) + "deg",
+        "--size": rand(12, 15) + "px",
+        "--delay": Math.round(120 + n * 90 + rand(0, 40)) + "ms",
+        "--c": color(n * 2 + 1)
+      }, NOTE_SVGS[n % NOTE_SVGS.length]);
+    }
+
+    btn.appendChild(wrap);
+  }
+
+  // Outline → solid with a spring pop (tilt back for up, down for down).
   function animateThumb(btn) {
     if (!btn) return;
     btn.setAttribute("aria-pressed", "true");
@@ -2093,6 +2151,7 @@
     btn.classList.remove("is-anim");
     void btn.offsetWidth; // restart the keyframe animation
     btn.classList.add("is-anim");
+    spawnRipple(btn);
   }
 
   function currentMode() {
@@ -2182,15 +2241,20 @@
     }
   }
 
-  function closeModal() {
-    if (!modal) return;
+  // Polaris command API: a hidden button with commandfor/command.
+  function commandModal(id, command) {
     var btn = document.createElement("button");
-    btn.setAttribute("commandfor", "fdt-feedback-modal");
-    btn.setAttribute("command", "--hide");
+    btn.setAttribute("commandfor", id);
+    btn.setAttribute("command", command);
     btn.hidden = true;
     document.body.appendChild(btn);
     btn.click();
     btn.remove();
+  }
+
+  function closeModal() {
+    if (!modal) return;
+    commandModal("fdt-feedback-modal", "--hide");
     modal.removeAttribute("open");
   }
 
@@ -2239,26 +2303,34 @@
     }, THANKS_MS);
   }
 
-  function requestReviewPrompt() {
-    var useApi = !forceApiOff;
-    var apiSuccess = null;
-    var apiCode = null;
-    var channel = "listing_fallback";
+  // Rate prompt (UI-05) replaces the thumbs inside the same banner card.
+  function showRatePrompt() {
+    showView("rate");
+    track("review_modal_opened");
+  }
 
-    if (useApi) {
-      // Mock Reviews API — succeed unless forced off
-      apiSuccess = true;
-      apiCode = "mock_ok";
-      channel = "reviews_api";
+  // "Take me to it" / "No thanks": Thank you 10s, then the standalone
+  // feedback banner (BR-05, BR-23). No Crisp segment here.
+  function onRateChoice(action) {
+    if (action === "take_me") {
+      track("review_modal_take_me_clicked", { target_url: LISTING });
+      window.open(LISTING, "_blank", "noopener,noreferrer");
+    } else {
+      track("review_modal_no_thanks_clicked");
     }
-
-    track("review_prompt_requested", {
-      channel: channel,
-      api_success: apiSuccess,
-      api_code: apiCode
+    state.reviewPathDone = true;
+    saveState();
+    showThanksThen(function () {
+      render();
     });
+  }
 
-    window.open(LISTING, "_blank", "noopener,noreferrer");
+  // X on the rate prompt: hide the thumbs banner for good (BR-24).
+  function onRateDismissed() {
+    track("review_modal_dismissed");
+    state.thumbsDismissed = true;
+    saveState();
+    render();
   }
 
   function onReviewPath(btn) {
@@ -2267,26 +2339,23 @@
     setThumbsDisabled(true);
     track("review_banner_thumb_clicked", { thumb: "up" });
     assignSegment("findter_happy", "ET-03");
-    state.reviewPathDone = true;
-    saveState();
-    // UI only: play pop + confetti and hold the card. The step/tab switch
-    // (open listing + move to thanks) happens ONLY after the delay below.
+    // UI only: play pop + confetti and hold the card. The rate prompt
+    // replaces the thumbs ONLY after the delay below.
     animateThumb(btn);
-    spawnConfetti(btn);
+    spawnBurst(btn);
     var delay = prefersReducedMotion() ? FEEDBACK_TRANSITION_DELAY_REDUCED : FEEDBACK_TRANSITION_DELAY;
-    setTimeout(function () {
-      requestReviewPrompt();
-      showThanksThen(function () {
-        render();
-      });
-    }, delay);
+    setTimeout(showRatePrompt, delay);
   }
 
-  function onFeedbackPath() {
-    // Thumb down: open the feedback modal immediately — no 3s hold / no delay.
-    // (The delay + confetti only apply to thumb up; see onReviewPath.)
+  function onFeedbackPath(btn) {
+    // Thumb down: fill + pop (no burst), then open the feedback modal once the
+    // pop has played. The hold + burst only apply to thumb up; see onReviewPath.
+    if (thumbsLocked) return;
     track("review_banner_thumb_clicked", { thumb: "down" });
-    openModal("thumbs_down");
+    animateThumb(btn);
+    setTimeout(function () {
+      openModal("thumbs_down");
+    }, prefersReducedMotion() ? 0 : THUMB_DOWN_MODAL_DELAY);
   }
 
   function onDismissBanner() {
@@ -2422,24 +2491,10 @@
       else if (action === "dismiss-banner") onDismissBanner();
       else if (action === "dismiss-feedback") onDismissFeedback();
       else if (action === "open-feedback-banner") onOpenFeedbackBanner();
+      else if (action === "rate-take-me") onRateChoice("take_me");
+      else if (action === "rate-no-thanks") onRateChoice("no_thanks");
+      else if (action === "dismiss-rate") onRateDismissed();
     });
-
-    // YouTube-style press feedback: fill in on pointerdown, fade out on release.
-    // The expanding stroke ring rides on the existing .is-anim class (see CSS).
-    function clearPressing() {
-      var pressed = root.querySelectorAll(".fdt-review__thumb.is-pressing");
-      for (var i = 0; i < pressed.length; i++) {
-        pressed[i].classList.remove("is-pressing");
-      }
-    }
-    root.addEventListener("pointerdown", function (ev) {
-      if (thumbsLocked || prefersReducedMotion()) return;
-      var thumb = ev.target.closest(".fdt-review__thumb");
-      if (thumb && root.contains(thumb)) thumb.classList.add("is-pressing");
-    });
-    root.addEventListener("pointerup", clearPressing);
-    root.addEventListener("pointercancel", clearPressing);
-    root.addEventListener("pointerleave", clearPressing);
 
     root.addEventListener("mouseover", function (ev) {
       var target = "banner";
@@ -2472,6 +2527,8 @@
 
     if (modal) {
       modal.addEventListener("hide", function () {
+        // Closed without sending (X / Never mind): release the thumbs-down fill.
+        if (!thumbsLocked) clearThumbs();
         if (!modalEntry) {
           closingFromAction = null;
           return;
