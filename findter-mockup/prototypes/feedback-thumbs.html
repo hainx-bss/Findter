@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feedback Thumbs</title>
+<!--
+  Findter feedback card: YouTube-style thumbs micro-interaction (prototype)
+  ------------------------------------------------------------------------
+  Tweakable timing / easing (all live as CSS custom properties on :root,
+  plus a few JS constants at the bottom of the file):
+
+  Hover
+    --hover-dur        150ms     background tint + scale
+    --hover-ease       ease
+    --hover-scale      1.05
+
+  Select ("pop")
+    --pop-dur          400ms     scale 1 → 0.8 → 1.2 → 1
+    --pop-ease         cubic-bezier(.34, 1.56, .64, 1)   spring-ish overshoot
+    --pop-tilt-up      -15deg    thumb up tilts back (counter-clockwise)
+    --pop-tilt-down     15deg    thumb down tilts down (clockwise)
+    --fill-dur         120ms     outline → solid fill crossfade
+
+  Un-select (reverse)
+    --unpop-dur        220ms     scale 1 → 0.85 → 1, fill drains, no confetti
+    --unpop-ease       ease-out
+
+  Ripple ring
+    --ripple-dur       500ms     ring scale 0.6 → 1.7, opacity .45 → 0
+    --ripple-ease      cubic-bezier(.2, .7, .3, 1)
+
+  Burst (thumb up only): firework streaks → twinkling sparks → floating notes
+    --streak-dur       550ms     rays shoot out from the icon, start ~60ms in
+    --streak-ease      cubic-bezier(.15, .8, .3, 1)
+    --spark-dur        600ms     stars pop at the streak tips (~250ms in), twinkle, drift down
+    --note-fly-dur     1100ms    notes rise ~50px with a sway, start ~120–300ms in
+    JS: STREAK_COUNT (12), STREAK_DIST (22–34px), SPARK_COUNT (8),
+        NOTE_COUNT (3), BURST_COLORS
+
+  Thank-you line
+    --note-dur         200ms     fade + 4px rise; space is always reserved
+
+  prefers-reduced-motion: reduce → no scale, tilt, ripple or confetti; the
+  fill change is instant.
+-->
+<style>
+  :root {
+    /* Timing / easing */
+    --hover-dur: 150ms;
+    --hover-ease: ease;
+    --hover-scale: 1.05;
+    --pop-dur: 400ms;
+    --pop-ease: cubic-bezier(.34, 1.56, .64, 1);
+    --pop-tilt-up: -15deg;
+    --pop-tilt-down: 15deg;
+    --fill-dur: 120ms;
+    --unpop-dur: 220ms;
+    --unpop-ease: ease-out;
+    --ripple-dur: 500ms;
+    --ripple-ease: cubic-bezier(.2, .7, .3, 1);
+    --streak-dur: 550ms;
+    --streak-ease: cubic-bezier(.15, .8, .3, 1);
+    --spark-dur: 600ms;
+    --note-fly-dur: 1100ms;
+    --note-dur: 200ms;
+
+    /* Polaris-ish tokens */
+    --p-bg: #f1f1f1;
+    --p-surface: #ffffff;
+    --p-text: #303030;
+    --p-text-secondary: #616161;
+    --p-icon: #4a4a4a;
+    --p-icon-active: #303030;
+    --p-tint-hover: rgba(0, 0, 0, .06);
+    --p-tint-active: rgba(0, 0, 0, .1);
+    --p-focus: #005bd3;
+    --p-link: #005bd3;
+    --p-ripple: #303030;
+    --p-shadow: 0 1px 0 0 rgba(26, 26, 26, .07), 0 1px 0 0 rgba(208, 208, 208, .4) inset,
+                1px 0 0 0 #cccccc inset, -1px 0 0 0 #cccccc inset, 0 -1px 0 0 #cccccc inset;
+    --p-radius-card: 12px;
+    --p-font: Inter, -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --p-bg: #1a1a1a;
+      --p-surface: #303030;
+      --p-text: #e3e3e3;
+      --p-text-secondary: #b5b5b5;
+      --p-icon: #cccccc;
+      --p-icon-active: #ffffff;
+      --p-tint-hover: rgba(255, 255, 255, .08);
+      --p-tint-active: rgba(255, 255, 255, .14);
+      --p-focus: #4b9cff;
+      --p-link: #7cb6ff;
+      --p-ripple: #ffffff;
+      --p-shadow: 0 0 0 1px #4a4a4a inset;
+    }
+  }
+  :root[data-theme="dark"] {
+    --p-bg: #1a1a1a;
+    --p-surface: #303030;
+    --p-text: #e3e3e3;
+    --p-text-secondary: #b5b5b5;
+    --p-icon: #cccccc;
+    --p-icon-active: #ffffff;
+    --p-tint-hover: rgba(255, 255, 255, .08);
+    --p-tint-active: rgba(255, 255, 255, .14);
+    --p-focus: #4b9cff;
+    --p-link: #7cb6ff;
+    --p-ripple: #ffffff;
+    --p-shadow: 0 0 0 1px #4a4a4a inset;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--p-bg);
+    color: var(--p-text);
+    font: 450 13px/20px var(--p-font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Card (Polaris surface) ---------- */
+  .fb-card {
+    position: relative;
+    width: min(100%, 340px);
+    padding: 16px 16px 12px;
+    background: var(--p-surface);
+    border-radius: var(--p-radius-card);
+    box-shadow: var(--p-shadow);
+    text-align: center;
+  }
+  .fb-card[hidden] { display: none; }
+  .fb-card__title {
+    margin: 0 28px 12px;
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 650;
+  }
+  .fb-card__close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--p-icon);
+    cursor: pointer;
+    transition: background-color var(--hover-dur) var(--hover-ease);
+  }
+  .fb-card__close:hover { background: var(--p-tint-hover); }
+  .fb-card__close:active { background: var(--p-tint-active); }
+  .fb-card__close:focus-visible,
+  .thumb:focus-visible,
+  .fb-note__link:focus-visible {
+    outline: 2px solid var(--p-focus);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Thumb buttons ---------- */
+  .thumbs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  .thumb {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--p-icon);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background-color var(--hover-dur) var(--hover-ease),
+      transform var(--hover-dur) var(--hover-ease);
+  }
+  .thumb:hover { background: var(--p-tint-hover); transform: scale(var(--hover-scale)); }
+  .thumb:active { background: var(--p-tint-active); }
+  .thumb[aria-pressed="true"] { color: var(--p-icon-active); }
+
+  .thumb__icon {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 22px;
+    height: 22px;
+    overflow: visible;
+  }
+  /* One path per icon: stroke always on, fill toggled. */
+  .thumb__icon .body {
+    fill: transparent;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    transition: fill var(--fill-dur) ease;
+  }
+  /* Cuff divider: drawn in the surface colour when filled so the cuff reads. */
+  .thumb__icon .cuff {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    transition: stroke var(--fill-dur) ease;
+  }
+  .thumb[aria-pressed="true"] .thumb__icon .body { fill: currentColor; }
+  .thumb[aria-pressed="true"] .thumb__icon .cuff { stroke: var(--p-surface); }
+
+  /* Pop on select */
+  .thumb--up.is-popping   .thumb__icon { animation: pop-up   var(--pop-dur) var(--pop-ease) both; transform-origin: 40% 70%; }
+  .thumb--down.is-popping .thumb__icon { animation: pop-down var(--pop-dur) var(--pop-ease) both; transform-origin: 60% 30%; }
+  .thumb.is-unpopping     .thumb__icon { animation: unpop var(--unpop-dur) var(--unpop-ease) both; }
+
+  @keyframes pop-up {
+    0%   { transform: scale(1)   rotate(0); }
+    25%  { transform: scale(.8)  rotate(var(--pop-tilt-up)); }
+    60%  { transform: scale(1.2) rotate(var(--pop-tilt-up)); }
+    100% { transform: scale(1)   rotate(0); }
+  }
+  @keyframes pop-down {
+    0%   { transform: scale(1)   rotate(0); }
+    25%  { transform: scale(.8)  rotate(var(--pop-tilt-down)); }
+    60%  { transform: scale(1.2) rotate(var(--pop-tilt-down)); }
+    100% { transform: scale(1)   rotate(0); }
+  }
+  @keyframes unpop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(.85); }
+    100% { transform: scale(1); }
+  }
+
+  /* Ripple ring (created by JS, removed on animationend) */
+  .thumb__ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--p-ripple);
+    pointer-events: none;
+    animation: ripple var(--ripple-dur) var(--ripple-ease) forwards;
+  }
+  @keyframes ripple {
+    from { transform: scale(.6); opacity: .45; }
+    to   { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* Burst (created by JS, removed after the last piece ends).
+     Three layers: firework streaks → twinkling sparks at their tips → floating notes. */
+  .burst {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 0; /* behind the icon, so pieces seem to come from it */
+  }
+  .burst > * { position: absolute; left: 0; top: 0; }
+
+  /* 1. Streaks: thin rays that shoot out along their angle, then shrink to nothing. */
+  .burst__streak {
+    width: 2px;
+    height: var(--len);
+    margin-left: -1px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, transparent, var(--c)); /* bright head leads outward */
+    transform-origin: 50% 0;
+    animation: streak var(--streak-dur) var(--streak-ease) var(--delay) both;
+  }
+  @keyframes streak {
+    0%   { transform: rotate(var(--a)) translateY(4px)          scaleY(.2); opacity: 0; }
+    20%  { opacity: 1; }
+    55%  { transform: rotate(var(--a)) translateY(calc(var(--dist) * .7)) scaleY(1); opacity: 1; }
+    100% { transform: rotate(var(--a)) translateY(var(--dist))  scaleY(0); opacity: 0; }
+  }
+
+  /* 2. Sparks: four-point stars that pop in at the streak tips and twinkle out. */
+  .burst__spark {
+    width: var(--size);
+    height: var(--size);
+    margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+    background: var(--c);
+    clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+    animation: spark var(--spark-dur) ease-out var(--delay) both;
+  }
+  @keyframes spark {
+    0%   { transform: translate(var(--x), var(--y)) scale(0)   rotate(0);   opacity: 1; }
+    30%  { transform: translate(var(--x), var(--y)) scale(1.2) rotate(45deg); opacity: 1; }
+    50%  { opacity: .3; }
+    65%  { opacity: 1; }
+    100% { transform: translate(calc(var(--x) * 1.15), calc(var(--y) * 1.15 + 6px)) scale(0) rotate(90deg); opacity: 0; }
+  }
+
+  /* 3. Notes: float up with a side-to-side sway and a little wobble. */
+  .burst__note {
+    width: var(--size);
+    height: var(--size);
+    margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+    color: var(--c);
+    animation: note var(--note-fly-dur) cubic-bezier(.3, .6, .4, 1) var(--delay) both;
+  }
+  .burst__note svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+  @keyframes note {
+    0%   { transform: translate(calc(var(--x) * .3), -6px) scale(.3) rotate(0); opacity: 0; }
+    15%  { transform: translate(calc(var(--x) * .6), -16px) scale(1) rotate(calc(var(--r) * -1)); opacity: 1; }
+    40%  { transform: translate(calc(var(--x) * .8 + var(--sway)), -24px) scale(1) rotate(var(--r)); }
+    65%  { transform: translate(calc(var(--x) - var(--sway)), -36px) scale(.95) rotate(calc(var(--r) * -1)); opacity: 1; }
+    100% { transform: translate(calc(var(--x) * 1.1 + var(--sway)), var(--rise)) scale(.7) rotate(var(--r)); opacity: 0; }
+  }
+
+  /* ---------- Thank-you line (space always reserved: no layout jump) ---------- */
+  .fb-note {
+    position: relative;
+    height: 20px;
+    margin-top: 8px;
+    color: var(--p-text-secondary);
+  }
+  .fb-note__msg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition:
+      opacity var(--note-dur) ease,
+      transform var(--note-dur) ease,
+      visibility 0s linear var(--note-dur);
+  }
+  .fb-note__msg.is-shown {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+      opacity var(--note-dur) ease,
+      transform var(--note-dur) ease,
+      visibility 0s;
+  }
+  .fb-note__link {
+    color: var(--p-link);
+    font-weight: 550;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+  .fb-note__link:hover { text-decoration: underline; }
+
+  /* Demo-only reset control */
+  .demo-reset {
+    font: inherit;
+    color: var(--p-text-secondary);
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thumb,
+    .thumb__icon .body,
+    .thumb__icon .cuff,
+    .fb-note__msg,
+    .fb-note__msg.is-shown { transition: none; }
+    .thumb:hover { transform: none; }
+    .thumb.is-popping .thumb__icon,
+    .thumb.is-unpopping .thumb__icon { animation: none; }
+    .thumb__ripple,
+    .burst { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<section class="fb-card" id="fb-card" aria-labelledby="fb-title">
+  <button type="button" class="fb-card__close" id="fb-close" aria-label="Dismiss">
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+  </button>
+
+  <h2 class="fb-card__title" id="fb-title">How's Findter working for you so far?</h2>
+
+  <div class="thumbs" role="group" aria-labelledby="fb-title">
+    <button type="button" class="thumb thumb--up" data-vote="up" aria-label="Helpful" aria-pressed="false">
+      <svg class="thumb__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="body" d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88L14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H7"/>
+        <path class="cuff" d="M7 10v12"/>
+      </svg>
+    </button>
+    <button type="button" class="thumb thumb--down" data-vote="down" aria-label="Not helpful" aria-pressed="false">
+      <svg class="thumb__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="body" d="M17 14V2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H17"/>
+        <path class="cuff" d="M17 14V2"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="fb-note" aria-live="polite">
+    <p class="fb-note__msg" id="note-up" style="margin:0">Thanks for your feedback!</p>
+    <p class="fb-note__msg" id="note-down" style="margin:0">
+      <span>Thanks for your feedback!</span>
+      <a class="fb-note__link" href="#" id="tell-more">Tell us more</a>
+    </p>
+  </div>
+</section>
+
+<button type="button" class="demo-reset" id="demo-reset">Reset demo</button>
+
+<script>
+(() => {
+  /* ---- Tweakables ---- */
+  const STREAK_COUNT = 12;
+  const STREAK_MIN_DIST = 22;         // px from centre
+  const STREAK_MAX_DIST = 34;
+  const SPARK_COUNT = 8;
+  const NOTE_COUNT = 3;
+  const BURST_COLORS = ['#005bd3', '#29845a', '#ffb800', '#e51c00', '#8051ff'];
+  const NOTE_SVGS = [
+    // ♪ eighth note
+    '<svg viewBox="0 0 16 16"><ellipse cx="5" cy="12.5" rx="3.2" ry="2.3" transform="rotate(-20 5 12.5)"/><rect x="7.1" y="1.5" width="1.5" height="11"/><path d="M8.6 1.5c.3 2.6 4.6 3.4 3.4 7.6 2.4-4.4-1.5-5.6-3.4-7.6z"/></svg>',
+    // ♫ beamed notes
+    '<svg viewBox="0 0 16 16"><ellipse cx="3.6" cy="13" rx="2.6" ry="1.9" transform="rotate(-20 3.6 13)"/><ellipse cx="12" cy="11.2" rx="2.6" ry="1.9" transform="rotate(-20 12 11.2)"/><rect x="5.4" y="3.2" width="1.3" height="9.6"/><rect x="13.8" y="1.4" width="1.3" height="9.6"/><path d="M5.4 3.2 15.1 1.4v2.6L5.4 5.8z"/></svg>'
+  ];
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const card = document.getElementById('fb-card');
+  const buttons = Array.from(card.querySelectorAll('.thumb'));
+  const notes = { up: document.getElementById('note-up'), down: document.getElementById('note-down') };
+
+  // Restart a CSS animation class even if it's mid-flight.
+  function replay(el, cls) {
+    el.classList.remove('is-popping', 'is-unpopping');
+    void el.offsetWidth;
+    el.classList.add(cls);
+    el.addEventListener('animationend', function done(e) {
+      if (e.target.classList.contains('thumb__icon')) {
+        el.classList.remove(cls);
+        el.removeEventListener('animationend', done);
+      }
+    });
+  }
+
+  function ripple(btn) {
+    const r = document.createElement('span');
+    r.className = 'thumb__ripple';
+    r.addEventListener('animationend', () => r.remove(), { once: true });
+    btn.appendChild(r);
+  }
+
+  function burst(btn) {
+    const wrap = document.createElement('span');
+    wrap.className = 'burst';
+    wrap.setAttribute('aria-hidden', 'true');
+    const rand = (min, max) => min + Math.random() * (max - min);
+    const color = (i) => BURST_COLORS[i % BURST_COLORS.length];
+    let pending = 0;
+    const add = (el, vars) => {
+      Object.entries(vars).forEach(([k, v]) => el.style.setProperty(k, v));
+      el.addEventListener('animationend', () => { if (--pending === 0) wrap.remove(); }, { once: true });
+      pending++;
+      wrap.appendChild(el);
+    };
+
+    // 1. Streaks, evenly spread with a little jitter. Starts as the icon squashes.
+    const tips = [];
+    for (let i = 0; i < STREAK_COUNT; i++) {
+      const a = (i / STREAK_COUNT) * 360 + rand(-8, 8);
+      const dist = rand(STREAK_MIN_DIST, STREAK_MAX_DIST);
+      tips.push({ a, dist });
+      const el = document.createElement('i');
+      el.className = 'burst__streak';
+      add(el, {
+        '--a': `${a}deg`,
+        '--dist': `${dist}px`,
+        '--len': `${rand(7, 11)}px`,
+        '--delay': `${Math.round(rand(50, 80))}ms`,
+        '--c': color(i),
+      });
+    }
+
+    // 2. Sparks at a random subset of streak tips, as the streaks fade.
+    tips.sort(() => Math.random() - .5).slice(0, SPARK_COUNT).forEach(({ a, dist }, i) => {
+      const rad = a * Math.PI / 180;           // CSS rotate(a) sends +Y to (-sin a, cos a)
+      const el = document.createElement('i');
+      el.className = 'burst__spark';
+      add(el, {
+        '--x': `${-Math.sin(rad) * (dist + 4)}px`,
+        '--y': `${Math.cos(rad) * (dist + 4)}px`,
+        '--size': `${rand(5, 8)}px`,
+        '--delay': `${Math.round(rand(220, 320))}ms`,
+        '--c': color(i + 2),
+      });
+    });
+
+    // 3. Notes drifting up, fanned left / centre / right.
+    for (let i = 0; i < NOTE_COUNT; i++) {
+      const el = document.createElement('span');
+      el.className = 'burst__note';
+      el.innerHTML = NOTE_SVGS[i % NOTE_SVGS.length];
+      const side = NOTE_COUNT === 1 ? 0 : (i / (NOTE_COUNT - 1)) * 2 - 1;  // -1 … 1
+      add(el, {
+        '--x': `${side * 24 + rand(-3, 3)}px`,
+        '--sway': `${rand(4, 7) * (i % 2 ? 1 : -1)}px`,
+        '--rise': `${-rand(46, 58)}px`,
+        '--r': `${rand(10, 18)}deg`,
+        '--size': `${rand(12, 15)}px`,
+        '--delay': `${Math.round(120 + i * 90 + rand(0, 40))}ms`,
+        '--c': color(i * 2 + 1),
+      });
+    }
+
+    btn.appendChild(wrap);
+  }
+
+  function showNote(vote) {
+    Object.entries(notes).forEach(([key, el]) => el.classList.toggle('is-shown', key === vote));
+  }
+
+  function setPressed(btn, pressed) {
+    btn.setAttribute('aria-pressed', String(pressed));
+  }
+
+  function onVote(btn) {
+    const vote = btn.dataset.vote;
+    const wasPressed = btn.getAttribute('aria-pressed') === 'true';
+    const animate = !reducedMotion.matches;
+
+    if (wasPressed) {
+      // Toggle off: reverse, no confetti.
+      setPressed(btn, false);
+      if (animate) replay(btn, 'is-unpopping');
+      showNote(null);
+      return;
+    }
+
+    // Mutually exclusive: quietly release the other thumb.
+    buttons.forEach((other) => {
+      if (other !== btn && other.getAttribute('aria-pressed') === 'true') {
+        setPressed(other, false);
+        if (animate) replay(other, 'is-unpopping');
+      }
+    });
+
+    setPressed(btn, true);
+    if (animate) {
+      replay(btn, 'is-popping');
+      ripple(btn);
+      if (vote === 'up') burst(btn);
+    }
+    showNote(vote);
+  }
+
+  // <button> already handles Enter/Space as click.
+  buttons.forEach((btn) => btn.addEventListener('click', () => onVote(btn)));
+
+  document.getElementById('fb-close').addEventListener('click', () => { card.hidden = true; });
+  document.getElementById('tell-more').addEventListener('click', (e) => e.preventDefault());
+  document.getElementById('demo-reset').addEventListener('click', () => {
+    buttons.forEach((b) => { setPressed(b, false); b.classList.remove('is-popping', 'is-unpopping'); });
+    showNote(null);
+    card.hidden = false;
+  });
+})();
+</script>
+</body>
+</html>
