@@ -365,7 +365,7 @@ def build() -> None:
         + '<script src="components/welcome-banner/welcome.js?v=3"></script>\n'
         + '<script src="components/highlight-features/highlight.js?v=16"></script>\n'
         + '<script src="components/master/master.js?v=1"></script>\n'
-        + '<script src="components/mockup-cases/mockup-cases.js?v=10"></script>\n'
+        + '<script src="components/mockup-cases/mockup-cases.js?v=11"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)
@@ -393,7 +393,7 @@ def build() -> None:
         home.rstrip()
         + "\n"
         + theme
-        + '\n<script src="../components/theme-compatibility/theme.js?v=15"></script>\n'
+        + '\n<script src="../components/theme-compatibility/theme.js?v=16"></script>\n'
     )
     write(ROOT / "app" / "home.html", home)
 
