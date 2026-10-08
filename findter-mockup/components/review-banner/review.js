@@ -2,14 +2,16 @@
   var SHOP = "khgym6-d1.myshopify.com";
   var STORAGE_KEY = "findter.review.banner.v1." + SHOP;
   var LISTING =
-    "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal&st_campaign=rate-app&st_source=admin-web";
+    "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal";
   var THANKS_MS = 10000;
   var INSTALL_DAYS = 14;
   // Hold the thumbs card after a click so the press/pop/confetti finishes,
-  // then move to the review step (and open the listing). Reduced-motion is shorter.
+  // then open the rate modal (UI-05). Reduced-motion is shorter.
   // >>> Tune the step delay here <<<
-  var FEEDBACK_TRANSITION_DELAY = 3000;
+  var FEEDBACK_TRANSITION_DELAY = 1500;
   var FEEDBACK_TRANSITION_DELAY_REDUCED = 600;
+  // Thumb down: let the pop finish before the modal covers it.
+  var THUMB_DOWN_MODAL_DELAY = 400;
 
   var params = new URLSearchParams(location.search);
   // Parent page may pass query via iframe — also check parent
@@ -24,7 +26,6 @@
 
   var isDevStore = params.get("store") === "dev";
   var forceFail = params.get("reviewFail") === "1";
-  var forceApiOff = params.get("reviewsApi") === "0";
   var demo = params.get("review") || "";
 
   var events = [];
@@ -38,8 +39,7 @@
   var thumbsLocked = false;
 
   var root = document.getElementById("fdt-review-root");
-  var modal = document.getElementById("fdt-feedback-modal");
-  var categoryEl = document.getElementById("fdt-feedback-category");
+  var modal = document.getElementById("fdt-feedback-modal");  var categoryEl = document.getElementById("fdt-feedback-category");
   var messageEl = document.getElementById("fdt-feedback-message");
   var fileEl = document.getElementById("fdt-feedback-file");
   var errorEl = document.getElementById("fdt-feedback-error");
@@ -146,7 +146,7 @@
   }
 
   function showView(name) {
-    ["thumbs", "thanks", "feedback"].forEach(function (key) {
+    ["thumbs", "rate", "thanks", "feedback"].forEach(function (key) {
       var el = view(key);
       if (!el) return;
       var show = key === name;
@@ -174,7 +174,7 @@
     if (!root) return;
     var btns = root.querySelectorAll(".fdt-review__thumb");
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.remove("is-selected", "is-anim", "is-pressing");
+      btns[i].classList.remove("is-selected", "is-anim");
       btns[i].setAttribute("aria-pressed", "false");
       btns[i].removeAttribute("aria-disabled");
     }
@@ -189,44 +189,103 @@
     }
   }
 
-  // Colored firework/confetti burst for thumbs up (Polaris token palette only).
-  // >>> Tune particle count, colors and duration here <<<
-  function spawnConfetti(btn) {
+  // Ring that expands from the button on select.
+  function spawnRipple(btn) {
     if (!btn || prefersReducedMotion()) return;
-    var colors = [
-      "--p-color-bg-fill-success",
-      "--p-color-bg-fill-info",
-      "--p-color-bg-fill-warning",
-      "--p-color-bg-fill-critical",
-      "--p-color-bg-fill-caution"
-    ];
-    function burst(count, scale) {
-      var layer = document.createElement("span");
-      layer.className = "fdt-review__confetti";
-      layer.setAttribute("aria-hidden", "true");
-      for (var i = 0; i < count; i++) {
-        var p = document.createElement("i");
-        var isStreak = Math.random() < 0.4;
-        var ang = (Math.PI * 2) * (i / count) + (Math.random() - 0.5) * 0.6;
-        var dist = (24 + Math.random() * 24) * scale; // 24–48px
-        p.className = isStreak ? "streak go" : "dot go";
-        p.style.setProperty("--tx", (Math.cos(ang) * dist).toFixed(1) + "px");
-        p.style.setProperty("--ty", (Math.sin(ang) * dist).toFixed(1) + "px");
-        p.style.setProperty("--rot", (ang * 180 / Math.PI + 90).toFixed(0) + "deg");
-        if (!isStreak) p.style.setProperty("--sz", (4 + Math.random() * 2).toFixed(0) + "px");
-        p.style.setProperty("--dur", (640 + Math.random() * 120).toFixed(0) + "ms");
-        p.style.background = "var(" + colors[Math.floor(Math.random() * colors.length)] + ")";
-        layer.appendChild(p);
-      }
-      btn.appendChild(layer);
-      setTimeout(function () {
-        if (layer.parentNode) layer.parentNode.removeChild(layer);
-      }, 1000);
-    }
-    burst(14, 1);
-    setTimeout(function () { burst(8, 0.7); }, 150);
+    var ring = document.createElement("span");
+    ring.className = "fdt-review__ripple";
+    ring.setAttribute("aria-hidden", "true");
+    ring.addEventListener("animationend", function () { ring.remove(); });
+    btn.appendChild(ring);
   }
 
+  // Thumbs-up burst: firework streaks, twinkling sparks at their tips, then
+  // music notes floating up. Polaris fill tokens only.
+  // >>> Tune counts, distances and colors here; durations are CSS vars on .fdt-review <<<
+  var BURST_STREAKS = 12;
+  var BURST_STREAK_DIST = [22, 34]; // px from centre
+  var BURST_SPARKS = 8;
+  var BURST_NOTES = 3;
+  var BURST_COLORS = [
+    "var(--p-color-bg-fill-info, #005bd3)",
+    "var(--p-color-bg-fill-success, #29845a)",
+    "var(--p-color-bg-fill-warning, #ffb800)",
+    "var(--p-color-bg-fill-critical, #e51c00)",
+    "var(--p-color-bg-fill-magic, #8051ff)"
+  ];
+  var NOTE_SVGS = [
+    // eighth note
+    '<svg viewBox="0 0 16 16"><ellipse cx="5" cy="12.5" rx="3.2" ry="2.3" transform="rotate(-20 5 12.5)"/><rect x="7.1" y="1.5" width="1.5" height="11"/><path d="M8.6 1.5c.3 2.6 4.6 3.4 3.4 7.6 2.4-4.4-1.5-5.6-3.4-7.6z"/></svg>',
+    // beamed notes
+    '<svg viewBox="0 0 16 16"><ellipse cx="3.6" cy="13" rx="2.6" ry="1.9" transform="rotate(-20 3.6 13)"/><ellipse cx="12" cy="11.2" rx="2.6" ry="1.9" transform="rotate(-20 12 11.2)"/><rect x="5.4" y="3.2" width="1.3" height="9.6"/><rect x="13.8" y="1.4" width="1.3" height="9.6"/><path d="M5.4 3.2 15.1 1.4v2.6L5.4 5.8z"/></svg>'
+  ];
+
+  function spawnBurst(btn) {
+    if (!btn || prefersReducedMotion()) return;
+    var wrap = document.createElement("span");
+    wrap.className = "fdt-review__burst";
+    wrap.setAttribute("aria-hidden", "true");
+    var pending = 0;
+    function rand(min, max) { return min + Math.random() * (max - min); }
+    function color(i) { return BURST_COLORS[i % BURST_COLORS.length]; }
+    function add(cls, vars, html) {
+      var el = document.createElement(html ? "span" : "i");
+      el.className = cls;
+      if (html) el.innerHTML = html;
+      Object.keys(vars).forEach(function (k) { el.style.setProperty(k, vars[k]); });
+      el.addEventListener("animationend", function () {
+        if (--pending === 0) wrap.remove();
+      });
+      pending++;
+      wrap.appendChild(el);
+    }
+
+    // 1. Streaks, evenly spread with a little jitter; start as the icon squashes.
+    var tips = [];
+    for (var i = 0; i < BURST_STREAKS; i++) {
+      var a = (i / BURST_STREAKS) * 360 + rand(-8, 8);
+      var dist = rand(BURST_STREAK_DIST[0], BURST_STREAK_DIST[1]);
+      tips.push({ a: a, dist: dist });
+      add("fdt-review__streak", {
+        "--a": a + "deg",
+        "--dist": dist + "px",
+        "--len": rand(7, 11) + "px",
+        "--delay": Math.round(rand(50, 80)) + "ms",
+        "--c": color(i)
+      });
+    }
+
+    // 2. Sparks at a random subset of streak tips, as the streaks fade.
+    tips.sort(function () { return Math.random() - 0.5; });
+    tips.slice(0, BURST_SPARKS).forEach(function (tip, i) {
+      var rad = tip.a * Math.PI / 180; // CSS rotate(a) sends +Y to (-sin a, cos a)
+      add("fdt-review__spark", {
+        "--x": (-Math.sin(rad) * (tip.dist + 4)) + "px",
+        "--y": (Math.cos(rad) * (tip.dist + 4)) + "px",
+        "--size": rand(5, 8) + "px",
+        "--delay": Math.round(rand(220, 320)) + "ms",
+        "--c": color(i + 2)
+      });
+    });
+
+    // 3. Notes drifting up, fanned left / centre / right.
+    for (var n = 0; n < BURST_NOTES; n++) {
+      var side = BURST_NOTES === 1 ? 0 : (n / (BURST_NOTES - 1)) * 2 - 1; // -1 … 1
+      add("fdt-review__note", {
+        "--x": (side * 24 + rand(-3, 3)) + "px",
+        "--sway": (rand(4, 7) * (n % 2 ? 1 : -1)) + "px",
+        "--rise": -rand(30, 36) + "px", // stays under the heading
+        "--r": rand(10, 18) + "deg",
+        "--size": rand(12, 15) + "px",
+        "--delay": Math.round(120 + n * 90 + rand(0, 40)) + "ms",
+        "--c": color(n * 2 + 1)
+      }, NOTE_SVGS[n % NOTE_SVGS.length]);
+    }
+
+    btn.appendChild(wrap);
+  }
+
+  // Outline → solid with a spring pop (tilt back for up, down for down).
   function animateThumb(btn) {
     if (!btn) return;
     btn.setAttribute("aria-pressed", "true");
@@ -235,6 +294,7 @@
     btn.classList.remove("is-anim");
     void btn.offsetWidth; // restart the keyframe animation
     btn.classList.add("is-anim");
+    spawnRipple(btn);
   }
 
   function currentMode() {
@@ -324,15 +384,20 @@
     }
   }
 
-  function closeModal() {
-    if (!modal) return;
+  // Polaris command API: a hidden button with commandfor/command.
+  function commandModal(id, command) {
     var btn = document.createElement("button");
-    btn.setAttribute("commandfor", "fdt-feedback-modal");
-    btn.setAttribute("command", "--hide");
+    btn.setAttribute("commandfor", id);
+    btn.setAttribute("command", command);
     btn.hidden = true;
     document.body.appendChild(btn);
     btn.click();
     btn.remove();
+  }
+
+  function closeModal() {
+    if (!modal) return;
+    commandModal("fdt-feedback-modal", "--hide");
     modal.removeAttribute("open");
   }
 
@@ -381,26 +446,34 @@
     }, THANKS_MS);
   }
 
-  function requestReviewPrompt() {
-    var useApi = !forceApiOff;
-    var apiSuccess = null;
-    var apiCode = null;
-    var channel = "listing_fallback";
+  // Rate prompt (UI-05) replaces the thumbs inside the same banner card.
+  function showRatePrompt() {
+    showView("rate");
+    track("review_modal_opened");
+  }
 
-    if (useApi) {
-      // Mock Reviews API — succeed unless forced off
-      apiSuccess = true;
-      apiCode = "mock_ok";
-      channel = "reviews_api";
+  // "Take me to it" / "No thanks": Thank you 10s, then the standalone
+  // feedback banner (BR-05, BR-23). No Crisp segment here.
+  function onRateChoice(action) {
+    if (action === "take_me") {
+      track("review_modal_take_me_clicked", { target_url: LISTING });
+      window.open(LISTING, "_blank", "noopener,noreferrer");
+    } else {
+      track("review_modal_no_thanks_clicked");
     }
-
-    track("review_prompt_requested", {
-      channel: channel,
-      api_success: apiSuccess,
-      api_code: apiCode
+    state.reviewPathDone = true;
+    saveState();
+    showThanksThen(function () {
+      render();
     });
+  }
 
-    window.open(LISTING, "_blank", "noopener,noreferrer");
+  // X on the rate prompt: hide the thumbs banner for good (BR-24).
+  function onRateDismissed() {
+    track("review_modal_dismissed");
+    state.thumbsDismissed = true;
+    saveState();
+    render();
   }
 
   function onReviewPath(btn) {
@@ -409,26 +482,23 @@
     setThumbsDisabled(true);
     track("review_banner_thumb_clicked", { thumb: "up" });
     assignSegment("findter_happy", "ET-03");
-    state.reviewPathDone = true;
-    saveState();
-    // UI only: play pop + confetti and hold the card. The step/tab switch
-    // (open listing + move to thanks) happens ONLY after the delay below.
+    // UI only: play pop + confetti and hold the card. The rate prompt
+    // replaces the thumbs ONLY after the delay below.
     animateThumb(btn);
-    spawnConfetti(btn);
+    spawnBurst(btn);
     var delay = prefersReducedMotion() ? FEEDBACK_TRANSITION_DELAY_REDUCED : FEEDBACK_TRANSITION_DELAY;
-    setTimeout(function () {
-      requestReviewPrompt();
-      showThanksThen(function () {
-        render();
-      });
-    }, delay);
+    setTimeout(showRatePrompt, delay);
   }
 
-  function onFeedbackPath() {
-    // Thumb down: open the feedback modal immediately — no 3s hold / no delay.
-    // (The delay + confetti only apply to thumb up; see onReviewPath.)
+  function onFeedbackPath(btn) {
+    // Thumb down: fill + pop (no burst), then open the feedback modal once the
+    // pop has played. The hold + burst only apply to thumb up; see onReviewPath.
+    if (thumbsLocked) return;
     track("review_banner_thumb_clicked", { thumb: "down" });
-    openModal("thumbs_down");
+    animateThumb(btn);
+    setTimeout(function () {
+      openModal("thumbs_down");
+    }, prefersReducedMotion() ? 0 : THUMB_DOWN_MODAL_DELAY);
   }
 
   function onDismissBanner() {
@@ -564,24 +634,10 @@
       else if (action === "dismiss-banner") onDismissBanner();
       else if (action === "dismiss-feedback") onDismissFeedback();
       else if (action === "open-feedback-banner") onOpenFeedbackBanner();
+      else if (action === "rate-take-me") onRateChoice("take_me");
+      else if (action === "rate-no-thanks") onRateChoice("no_thanks");
+      else if (action === "dismiss-rate") onRateDismissed();
     });
-
-    // YouTube-style press feedback: fill in on pointerdown, fade out on release.
-    // The expanding stroke ring rides on the existing .is-anim class (see CSS).
-    function clearPressing() {
-      var pressed = root.querySelectorAll(".fdt-review__thumb.is-pressing");
-      for (var i = 0; i < pressed.length; i++) {
-        pressed[i].classList.remove("is-pressing");
-      }
-    }
-    root.addEventListener("pointerdown", function (ev) {
-      if (thumbsLocked || prefersReducedMotion()) return;
-      var thumb = ev.target.closest(".fdt-review__thumb");
-      if (thumb && root.contains(thumb)) thumb.classList.add("is-pressing");
-    });
-    root.addEventListener("pointerup", clearPressing);
-    root.addEventListener("pointercancel", clearPressing);
-    root.addEventListener("pointerleave", clearPressing);
 
     root.addEventListener("mouseover", function (ev) {
       var target = "banner";
@@ -614,6 +670,8 @@
 
     if (modal) {
       modal.addEventListener("hide", function () {
+        // Closed without sending (X / Never mind): release the thumbs-down fill.
+        if (!thumbsLocked) clearThumbs();
         if (!modalEntry) {
           closingFromAction = null;
           return;
