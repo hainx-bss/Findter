@@ -50,7 +50,7 @@ App body is the iframe document: parts in `findter-mockup/app/`, assembled into 
 
 Other Admin surfaces that are not App Home (for example Theme Editor for the app-embed case) live under `findter-mockup/screens/` as frozen SingleFile pages. Do not run those through `assemble.py`.
 
-The current pages are a SingleFile snapshot. They do not load a Polaris `<script>`. Rendered components are frozen in `<template shadowrootmode="open">`, mixed with legacy `Polaris-*` class markup. The parent page scripts `assemble.py` adds are `components/highlight-features/highlight.js`, `components/master/master.js` and `components/mockup-cases/mockup-cases.js`.
+The current pages are a SingleFile snapshot. They do not load a Polaris `<script>`. Rendered components are frozen in `<template shadowrootmode="open">`, mixed with legacy `Polaris-*` class markup. The only page scripts `assemble.py` adds are `components/welcome-banner/welcome.js` and `components/highlight-features/highlight.js`.
 
 When new markup must register live `s-*` elements, add exactly one script in that document's `<head>`:
 
