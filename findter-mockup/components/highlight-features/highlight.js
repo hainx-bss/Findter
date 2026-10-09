@@ -1,6 +1,5 @@
 (function () {
   var SHOP = "khgym6-d1.myshopify.com";
-  var SLIDE_MS = 7000;
   var INDEX_MS = 10000;
   var HOUR_MS = 3600 * 1000;
   var KEY = {
@@ -311,36 +310,16 @@
 
   function createWidget(tabsEl, bodyEl, options) {
     var index = 0;
-    var timer = null;
-    var hovering = false;
-    var modalOpen = false;
     var viewed = false;
     var list = [];
 
     function current() { return list[index] || null; }
 
-    function stopTimer() {
-      if (timer) clearTimeout(timer);
-      timer = null;
-    }
-
-    function canAutoAdvance() {
-      return !!(options.autoplay && !hovering && !modalOpen && mode === "highlight" && root && !root.hidden);
-    }
-
-    // Every feature advances after SLIDE_MS while Idle (BR-21); the card never plays media.
-    function armTimer() {
-      stopTimer();
-      if (!canAutoAdvance()) return;
-      timer = setTimeout(advance, SLIDE_MS);
-    }
-
-    function render(reason) {
+    function render() {
       list = slides();
       if (!list.length) {
         tabsEl.innerHTML = "";
         bodyEl.innerHTML = '<s-paragraph color="subdued">No highlight features to show yet.</s-paragraph>';
-        stopTimer();
         return;
       }
       if (index < 0 || index >= list.length) index = 0;
@@ -374,16 +353,6 @@
           "</s-grid>";
       }
       drawFirstFrames(bodyEl);
-      if (reason === "auto_slide") {
-        track("highlight_feature_slide_changed", Object.assign(baseEvent(options.source, slide), { slide_reason: "auto_slide" }));
-      }
-      armTimer();
-    }
-
-    function advance() {
-      if (!canAutoAdvance() || !list.length) return;
-      index = (index + 1) % list.length;
-      render("auto_slide");
     }
 
     function selectGroup(code) {
@@ -393,7 +362,7 @@
       index = next;
       var slide = current();
       track("highlight_feature_selected", Object.assign(baseEvent(options.source, slide), { selection_type: "group" }));
-      render("select");
+      render();
     }
 
     function selectFeature(code) {
@@ -403,7 +372,7 @@
       index = next;
       var slide = current();
       track("highlight_feature_selected", Object.assign(baseEvent(options.source, slide), { selection_type: "feature" }));
-      render("select");
+      render();
     }
 
     // Next feature in this group, then the first feature of the next group; last one finishes.
@@ -415,7 +384,7 @@
       }
       index += 1;
       track("highlight_feature_selected", Object.assign(baseEvent(options.source, current()), { selection_type: "next" }));
-      render("next");
+      render();
     }
 
     function goToCode(code) {
@@ -425,7 +394,7 @@
       });
       if (next < 0) return false;
       index = next;
-      render("restore");
+      render();
       return true;
     }
 
@@ -453,37 +422,21 @@
       var feature = event.target.closest("[data-feature]");
       if (feature) selectFeature(feature.getAttribute("data-feature"));
     });
-    bodyEl.addEventListener("mouseover", function (event) {
-      if (!options.autoplay || !event.target.closest(".fdt-hf__media")) return;
-      hovering = true;
-      stopTimer();
-    });
-    bodyEl.addEventListener("mouseout", function (event) {
-      if (!hovering) return;
-      var frameEl = event.target.closest ? event.target.closest(".fdt-hf__media") : null;
-      if (!frameEl) return;
-      if (event.relatedTarget && frameEl.contains(event.relatedTarget)) return;
-      hovering = false;
-      armTimer();
-    });
 
     return {
       show: function (reset) {
         if (reset) index = 0;
         viewed = false;
-        render("show");
+        render();
         // ET-01 fires on the Highlight page only; the Homepage card is measured by ET-02 / ET-04.
         if (!viewed && current() && options.source === "highlight_page") {
           viewed = true;
           track("highlight_feature_viewed", baseEvent(options.source, current()));
         }
       },
-      refresh: function () { render("refresh"); },
+      refresh: function () { render(); },
       current: current,
-      restore: goToCode,
-      pauseForModal: function () { modalOpen = true; stopTimer(); },
-      resumeFromModal: function () { modalOpen = false; armTimer(); },
-      stop: stopTimer
+      restore: goToCode
     };
   }
 
@@ -507,7 +460,6 @@
     var feature = slide.feature;
     var kind = mediaTypeOf(feature);
     if (!pageWidget || (!feature.media && !feature.thumbnail)) return;
-    pageWidget.pauseForModal();
     mediaStage.innerHTML = "";
     if (kind === "video") {
       var video = document.createElement("video");
@@ -551,7 +503,6 @@
 
   function onMediaHidden() {
     mediaStage.innerHTML = "";
-    if (pageWidget) pageWidget.resumeFromModal();
     if (mode === "home") root.hidden = true;
   }
 
@@ -563,7 +514,6 @@
     localStorage.setItem(KEY.viewFeature, "true");
     sessionStorage.setItem(SESSION_HIDE, "1");
     sessionStorage.setItem(BACK_TARGET, JSON.stringify({ source: source, featureCode: feature.code }));
-    if (pageWidget) pageWidget.stop();
     history.pushState({ findterHighlightBack: true }, "", location.pathname + location.search + "#Features");
     page.hidden = true;
     advanced.hidden = false;
@@ -590,7 +540,6 @@
   function showHome() {
     mode = "home";
     root.hidden = true;
-    if (pageWidget) pageWidget.stop();
     mountHomeCard();
     wireHelpLink();
   }
@@ -613,7 +562,6 @@
     var slide = homeWidget ? homeWidget.current() : null;
     localStorage.setItem(KEY.cardDismissed, "true");
     track("highlight_card_dismissed", Object.assign({ source: "homepage", shop_domain: SHOP }, slide ? idsFor(slide) : {}));
-    if (homeWidget) homeWidget.stop();
     homeWidget = null;
     removeHomeCard();
   }
@@ -697,7 +645,6 @@
     section.parentNode.insertBefore(wrap, section);
     homeWidget = createWidget(doc.getElementById("fdt-hf-home-tabs"), doc.getElementById("fdt-hf-home-body"), {
       source: "homepage",
-      autoplay: false,
       alwaysView: false
     });
     homeWidget.show(true);
@@ -707,7 +654,6 @@
   function present(resetHighlight) {
     if (welcomeOpen()) {
       root.hidden = true;
-      if (pageWidget) pageWidget.stop();
       return;
     }
     if (mode === "advanced") {
@@ -755,7 +701,6 @@
 
   pageWidget = createWidget(document.getElementById("fdt-hf-tabs"), document.getElementById("fdt-hf-body"), {
     source: "highlight_page",
-    autoplay: true,
     alwaysView: true,
     tour: true,
     onFinish: function () { finishHighlight("get_started"); }
@@ -782,7 +727,6 @@
     new MutationObserver(function () {
       if (welcomeOpen()) {
         root.hidden = true;
-        if (pageWidget) pageWidget.stop();
         return;
       }
       // Continue / X / Esc on welcome banner → Highlight Features (not homepage).
@@ -837,7 +781,6 @@
   window.FindterHighlight.show = forceShowHighlight;
   window.FindterHighlight.hide = function () {
     root.hidden = true;
-    if (pageWidget) pageWidget.stop();
   };
   window.FindterHighlight.resetIndex = resetIndex;
   window.FindterHighlight.getIndexMs = function () { return INDEX_MS; };
