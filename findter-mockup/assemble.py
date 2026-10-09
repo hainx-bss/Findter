@@ -178,7 +178,6 @@ def split(monolith: str) -> None:
         f'<link rel=stylesheet href="admin/styles/{name}">' for name in ADMIN_STYLES
     )
     links += (
-        '\n<link rel=stylesheet href="components/welcome-banner/welcome.css">'
         '\n<link rel=stylesheet href="components/highlight-features/highlight.css?v=3">'
         '\n<link rel=stylesheet href="components/mockup-cases/mockup-cases.css">'
     )
@@ -199,23 +198,19 @@ def split(monolith: str) -> None:
     if iframe_at < 0 or iframe_end < 0:
         raise SystemExit("App iframe not found")
     iframe_end += len("</iframe>")
-    welcome_at = rest.find("<div id=fdt-welcome")
     highlight_at = rest.find("<div id=fdt-hf")
-    if welcome_at < 0 or highlight_at < 0:
-        raise SystemExit("Welcome or highlight markup not found")
+    if highlight_at < 0:
+        raise SystemExit("Highlight markup not found")
+    # Old snapshots still carry the removed Welcome Modal; drop it.
+    welcome_at = rest.find("<div id=fdt-welcome")
+    if welcome_at < 0:
+        welcome_at = highlight_at
 
     write(ROOT / "admin" / "chrome" / "before-frame.html", pretty(rest[:iframe_at]))
     write(
         ROOT / "admin" / "chrome" / "after-frame.html",
         pretty(rest[iframe_end:welcome_at]),
     )
-
-    welcome_style, welcome_style_end = inner_style(rest, welcome_at)
-    welcome_script, _welcome_script_end = inner_script(rest, welcome_style_end)
-    welcome_html = rest[welcome_at : rest.find("<style", welcome_at)]
-    write(ROOT / "components" / "welcome-banner" / "welcome.html", pretty(welcome_html))
-    write(ROOT / "components" / "welcome-banner" / "welcome.css", welcome_style)
-    write(ROOT / "components" / "welcome-banner" / "welcome.js", welcome_script)
 
     highlight_style_at = rest.find("<style", highlight_at)
     highlight_style, highlight_style_end = inner_style(rest, highlight_at)
@@ -334,7 +329,6 @@ def build() -> None:
     )
     before = (ROOT / "admin" / "chrome" / "before-frame.html").read_text(encoding="utf-8")
     after = (ROOT / "admin" / "chrome" / "after-frame.html").read_text(encoding="utf-8")
-    welcome = (ROOT / "components" / "welcome-banner" / "welcome.html").read_text(encoding="utf-8")
     highlight = (ROOT / "components" / "highlight-features" / "highlight.html").read_text(encoding="utf-8")
     master = (ROOT / "components" / "master" / "master.html").read_text(encoding="utf-8")
     head = head.replace(
@@ -358,14 +352,12 @@ def build() -> None:
         + IFRAME
         + "\n"
         + after
-        + welcome
         + highlight
         + master
         + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
-        + '<script src="components/welcome-banner/welcome.js?v=3"></script>\n'
-        + '<script src="components/highlight-features/highlight.js?v=22"></script>\n'
-        + '<script src="components/master/master.js?v=2"></script>\n'
-        + '<script src="components/mockup-cases/mockup-cases.js?v=11"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=23"></script>\n'
+        + '<script src="components/master/master.js?v=3"></script>\n'
+        + '<script src="components/mockup-cases/mockup-cases.js?v=12"></script>\n'
         + "</body></html>\n"
     )
     write(ROOT / "index.html", index)

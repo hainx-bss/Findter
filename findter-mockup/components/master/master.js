@@ -350,9 +350,6 @@
   }
 
   function show() {
-    if (window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
-      window.FindterWelcome.hide();
-    }
     if (window.FindterHighlight) {
       var hf = document.getElementById("fdt-hf");
       if (hf) hf.hidden = true;
