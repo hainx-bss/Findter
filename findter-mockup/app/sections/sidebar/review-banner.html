@@ -21,38 +21,37 @@
     </div>
   </div>
 
-  <!-- Rate prompt (UI-05): replaces the thumbs in the same card after the thumbs-up hold. -->
+  <!-- Rate prompt (UI-05): replaces the thumbs in the same card after the thumbs-up hold. Neutral wording (App Store 1.3.1). -->
   <div class="fdt-review__card fdt-review__card--rate" data-view="rate" hidden>
     <button type="button" class="fdt-review__dismiss" data-action="dismiss-rate" aria-label="Dismiss">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
-    <p class="fdt-review__rate-heading">Love Findter?</p>
-    <p class="fdt-review__rate-text">Rate us on the App Store.</p>
+    <p class="fdt-review__rate-heading">How's Findter working for you?</p>
+    <p class="fdt-review__rate-text">Share your experience on the Shopify App Store. Every review, good or bad, helps us improve.</p>
     <div class="fdt-review__rate-actions">
       <s-stack direction="inline" gap="small-200" justifyContent="end" alignItems="center">
-        <s-button data-action="rate-no-thanks">Later</s-button>
-        <s-button data-action="rate-take-me" variant="primary">Rate Findter</s-button>
+        <s-button data-action="rate-not-now">Not now</s-button>
+        <s-button data-action="rate-write" variant="primary">Write a review</s-button>
       </s-stack>
     </div>
   </div>
 
+  <!-- Thank you: stays until X or reload (no timer). Thumbs-down entry adds the review link. -->
   <div class="fdt-review__card fdt-review__card--thanks" data-view="thanks" hidden>
-    <s-stack direction="inline" gap="small" alignItems="center">
-      <img class="fdt-review__party" src="https://cdn.shopify.com/s/files/1/0765/0302/3847/files/partying_face_3d.png?v=1787908953" alt="" width="28" height="28">
-      <s-text>Thank you so much for your valuable feedbacks!</s-text>
-    </s-stack>
-  </div>
-
-  <div class="fdt-review__card fdt-review__card--feedback" data-view="feedback" hidden>
-    <button type="button" class="fdt-review__dismiss" data-action="dismiss-feedback" aria-label="Dismiss">
+    <button type="button" class="fdt-review__dismiss" data-action="dismiss-thanks" aria-label="Dismiss">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
-    <p class="fdt-review__feedback-title">Have feedback for us?</p>
-    <button type="button" class="fdt-review__feedback-btn" data-action="open-feedback-banner">
-      <span class="fdt-review__feedback-btn-ico" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path d="M10 2a8 8 0 0 0-8 8v5.5A1.5 1.5 0 0 0 3.5 17H6v1.5a.5.5 0 0 0 .8.4L10.5 16H16.5A1.5 1.5 0 0 0 18 14.5V10a8 8 0 0 0-8-8Z"/></svg>
-      </span>
-      <span>Share feedback</span>
-    </button>
+    <s-stack direction="inline" gap="small" alignItems="center">
+      <img class="fdt-review__party" src="https://cdn.shopify.com/s/files/1/0765/0302/3847/files/partying_face_3d.png?v=1787908953" alt="" width="28" height="28">
+      <s-stack gap="small-300">
+        <s-text>Thank you so much for your valuable feedbacks!</s-text>
+        <s-link data-review-link data-action="review-link" href="https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal" target="_blank" hidden>Write a review on the App Store</s-link>
+      </s-stack>
+    </s-stack>
   </div>
 </div>
+
+<!-- Demo only (?otherBanner=1): another banner in this column, so the review banner skips this load. -->
+<s-banner id="fdt-other-banner" data-fdt-column-banner tone="info" heading="Your free trial ends in 7 days" hidden>
+  Choose a plan to keep Findter running on your store.
+</s-banner>

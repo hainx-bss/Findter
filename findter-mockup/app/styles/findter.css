@@ -61,21 +61,11 @@
 .fdt-review__thumb.is-anim .fdt-review__ico{animation:none}
 .fdt-review__card--thumbs.fdt-fade-in .fdt-review__wave{animation:none}
 .fdt-review__ripple,.fdt-review__burst{display:none}
-.fdt-review__feedback-btn,.fdt-review__feedback-btn-ico{transition:background .15s ease-out}
-.fdt-review__feedback-btn:hover .fdt-review__feedback-btn-ico,.fdt-review__feedback-btn:active{transform:none}
 .fdt-fade-in{animation:none}
 }
-.fdt-review__card--thanks{display:flex;align-items:center;min-block-size:72px}
+.fdt-review__card--thanks{display:flex;align-items:center;min-block-size:72px;padding-inline-end:44px}
 .fdt-review__party{flex-shrink:0}
-.fdt-review__card--feedback{display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;padding-inline-end:44px;text-align:start;box-shadow:none}
-.fdt-review__feedback-title{flex:1 1 150px;min-width:0;margin:0;font-size:14px;font-weight:600;line-height:1.35;color:var(--p-color-text,#303030)}
-.fdt-review__feedback-btn{flex:0 0 auto;margin-inline:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border:0;border-radius:var(--p-border-radius-200,8px);background:var(--p-color-bg-fill-brand,#303030);color:var(--p-color-text-brand-on-bg-fill,#fff);font:inherit;font-size:13px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,transform .15s ease-out}
-.fdt-review__feedback-btn:hover{background:var(--p-color-bg-fill-brand-hover,#1a1a1a)}
-.fdt-review__feedback-btn:hover .fdt-review__feedback-btn-ico{transform:scale(1.05)}
-.fdt-review__feedback-btn:active{background:var(--p-color-bg-fill-brand-active,#1a1a1a);transform:scale(.97)}
-.fdt-review__feedback-btn:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:2px}
-.fdt-review__feedback-btn-ico{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;transition:transform .15s ease-out}
-.fdt-review__feedback-btn-ico svg{display:block;width:20px;height:20px}
+[data-fdt-column-banner][hidden]{display:none!important}
 @media (max-width:47.9975em){
 .fdt-review-mobile-host{display:block}
 .fdt-review-mobile-host:empty{display:none}
