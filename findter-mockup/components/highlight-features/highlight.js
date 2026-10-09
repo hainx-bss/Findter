@@ -15,17 +15,15 @@
     isReinstall: "findter.install.isReinstall"
   };
   var DEFAULT_INSTALL_ID = "ins_mock_1";
-  // Trial card copy. TRIAL.note must match the real billing setup before release.
-  var TRIAL = {
-    heading: "Your 14-day free trial includes",
-    items: [
-      { icon: "filter", text: "Unlimited filters and smart search" },
-      { icon: "product", text: "Up to 50,000 active products" },
-      { icon: "theme-edit", text: "Free theme customization" },
-      { icon: "chat", text: "Live chat support" }
-    ],
-    note: "No charge during your trial. Cancel anytime."
+  // Welcome step: first step of the Highlight card on the welcome page (was the Welcome Modal image).
+  // mobile: "" → the desktop image is scaled down.
+  var WELCOME = {
+    desktop: "https://cdn.shopify.com/s/files/1/0765/0302/3847/files/welcom-banner_ae9cedd4-0385-4d08-b179-2dda6d7801b5.png?v=1789554422",
+    mobile: "",
+    alt: "14-day free trial with unlimited features: no charge, full access, free plan available, 50,000+ active products, unlimited filters, smart search, free theme customization, advanced features, live chat support",
+    cta: "Continue"
   };
+  var LOCALE = (document.documentElement.lang || "en").slice(0, 2);
   var EMPTY_PREVIEW = "Preview coming soon.";
   var SESSION_HIDE = "findter.highlight.sessionHide";
   var BACK_TARGET = "findter.highlight.backTarget";
@@ -61,7 +59,8 @@
   var advancedFocus = document.getElementById("fdt-hf-advanced-focus");
   var mediaModal = document.getElementById("fdt-hf-media");
   var mediaStage = document.getElementById("fdt-hf-media-stage");
-  var trial = document.getElementById("fdt-hf-trial");
+  var section = document.getElementById("fdt-hf-section");
+  var intro = document.getElementById("fdt-hf-intro");
   var frame = document.querySelector("iframe[name=app-iframe]");
   var pageWidget = null;
   var homeWidget = null;
@@ -254,29 +253,6 @@
     }
   }
 
-  // Trial card: plain section (not a Banner), no countdown, no own dismiss. Hides with the welcome page.
-  function renderTrial() {
-    if (!trial) return;
-    trial.innerHTML =
-      '<s-section heading="' + esc(TRIAL.heading) + '">' +
-      '<s-stack gap="base">' +
-      "<s-query-container>" +
-      '<s-grid gridTemplateColumns="@container (inline-size > 480px) 1fr 1fr, 1fr" gap="base">' +
-      TRIAL.items.map(function (item) {
-        return (
-          '<s-stack direction="inline" gap="small" alignItems="center">' +
-          '<s-icon type="' + esc(item.icon) + '"></s-icon>' +
-          "<s-text>" + esc(item.text) + "</s-text>" +
-          "</s-stack>"
-        );
-      }).join("") +
-      "</s-grid>" +
-      "</s-query-container>" +
-      '<s-text color="subdued">' + esc(TRIAL.note) + "</s-text>" +
-      "</s-stack>" +
-      "</s-section>";
-  }
-
   // Info only: indexing never blocks Continue to Homepage.
   function renderBanner() {
     var done = indexed();
@@ -325,6 +301,7 @@
   function tourHtml(tour) {
     if (!tour) return "";
     return (
+      (tour.back ? '<s-button type="button" variant="tertiary" data-back="1">Back</s-button>' : "") +
       '<s-text color="subdued">' + tour.position + " of " + tour.total + (tour.total === 1 ? " feature" : " features") + "</s-text>" +
       '<s-button type="button" variant="primary" data-next="1">' + (tour.last ? "Get started" : "Next feature") + "</s-button>"
     );
@@ -370,10 +347,42 @@
     var index = 0;
     var viewed = false;
     var list = [];
+    // options.welcome: the card opens on the Welcome step; Continue shows the features.
+    var step = "features";
 
     function current() { return list[index] || null; }
 
+    function welcomeHtml() {
+      var mobile = window.matchMedia("(max-width: 767px)").matches;
+      var src = (mobile && WELCOME.mobile) || WELCOME.desktop;
+      return (
+        '<s-stack gap="base">' +
+        '<s-image src="' + esc(src) + '" alt="' + esc(WELCOME.alt) + '" inlineSize="fill" borderRadius="base"></s-image>' +
+        '<s-stack direction="inline" justifyContent="end">' +
+        '<s-button type="button" variant="primary" data-continue="1">' + esc(WELCOME.cta) + "</s-button>" +
+        "</s-stack></s-stack>"
+      );
+    }
+
+    // Welcome step hides the section heading, intro line and tabs; the card stays in place.
+    function setChrome(onWelcome) {
+      tabsEl.style.display = onWelcome ? "none" : "";
+      if (!options.welcome) return;
+      if (options.sectionEl) {
+        if (onWelcome) options.sectionEl.removeAttribute("heading");
+        else options.sectionEl.setAttribute("heading", "What you can do with Findter");
+      }
+      if (options.introEl) options.introEl.style.display = onWelcome ? "none" : "";
+    }
+
     function render() {
+      if (options.welcome && step === "welcome") {
+        setChrome(true);
+        tabsEl.innerHTML = "";
+        bodyEl.innerHTML = welcomeHtml();
+        return;
+      }
+      setChrome(false);
       list = slides();
       if (!list.length) {
         tabsEl.innerHTML = "";
@@ -391,7 +400,7 @@
       }).join("");
       var kids = childrenOf(slide.group.code);
       var showView = options.alwaysView || indexed();
-      var tour = options.tour ? { position: index + 1, total: list.length, last: index === list.length - 1 } : null;
+      var tour = options.tour ? { position: index + 1, total: list.length, last: index === list.length - 1, back: !!options.welcome } : null;
       if (!kids.length) {
         bodyEl.innerHTML = previewHtml(slide, showView, "solo", tour);
       } else {
@@ -445,12 +454,45 @@
       render();
     }
 
+    function viewFeatureOnce() {
+      if (viewed || !current() || options.source !== "highlight_page") return;
+      viewed = true;
+      track("highlight_feature_viewed", baseEvent(options.source, current()));
+    }
+
+    function showWelcomeStep() {
+      step = "welcome";
+      render();
+      track("welcome_step_viewed", {
+        source: options.source,
+        shop_domain: SHOP,
+        install_id: installId(),
+        is_reinstall: isReinstall(),
+        locale: LOCALE
+      });
+    }
+
+    function continueToFeatures() {
+      track("welcome_continue_clicked", { source: options.source, shop_domain: SHOP, install_id: installId() });
+      step = "features";
+      index = 0;
+      render();
+      viewFeatureOnce();
+    }
+
+    function backToWelcome() {
+      track("highlight_back_to_welcome_clicked", Object.assign(baseEvent(options.source, current()), { install_id: installId() }));
+      showWelcomeStep();
+    }
+
     function goToCode(code) {
       var next = -1;
       slides().forEach(function (slide, i) {
         if (next < 0 && (slide.feature.code === code || slide.group.code === code)) next = i;
       });
       if (next < 0) return false;
+      step = "features";
+      viewed = true;
       index = next;
       render();
       return true;
@@ -461,6 +503,14 @@
       if (tab) selectGroup(tab.getAttribute("data-group"));
     });
     bodyEl.addEventListener("click", function (event) {
+      if (event.target.closest("[data-continue]")) {
+        continueToFeatures();
+        return;
+      }
+      if (event.target.closest("[data-back]")) {
+        backToWelcome();
+        return;
+      }
       if (event.target.closest("[data-next]")) {
         next();
         return;
@@ -485,17 +535,14 @@
       show: function (reset) {
         if (reset) index = 0;
         viewed = false;
+        // Every (re)open of the welcome page starts on the Welcome step.
+        if (options.welcome) {
+          showWelcomeStep();
+          return;
+        }
         render();
         // ET-01 fires on the Highlight page only; the Homepage card is measured by ET-02 / ET-04.
-        // It is also the "welcome page shown" event, so it carries the install fields.
-        if (!viewed && current() && options.source === "highlight_page") {
-          viewed = true;
-          track("highlight_feature_viewed", Object.assign(baseEvent(options.source, current()), {
-            shop_domain: SHOP,
-            install_id: installId(),
-            is_reinstall: isReinstall()
-          }));
-        }
+        viewFeatureOnce();
       },
       refresh: function () { render(); },
       current: current,
@@ -592,7 +639,6 @@
     page.hidden = false;
     advanced.hidden = true;
     closeMedia();
-    renderTrial();
     // Default: restart indexing whenever the highlight screen opens.
     // Reopening from Help keeps the current index state.
     if (keepIndex) renderBanner();
@@ -763,6 +809,9 @@
     source: "highlight_page",
     alwaysView: true,
     tour: true,
+    welcome: true,
+    sectionEl: section,
+    introEl: intro,
     onFinish: function () { finishHighlight("get_started"); }
   });
 
