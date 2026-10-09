@@ -325,7 +325,7 @@ def build() -> None:
         )
     head = head.replace(
         'href="components/highlight-features/highlight.css"',
-        'href="components/highlight-features/highlight.css?v=8"',
+        'href="components/highlight-features/highlight.css?v=9"',
     )
     before = (ROOT / "admin" / "chrome" / "before-frame.html").read_text(encoding="utf-8")
     after = (ROOT / "admin" / "chrome" / "after-frame.html").read_text(encoding="utf-8")
@@ -333,15 +333,15 @@ def build() -> None:
     master = (ROOT / "components" / "master" / "master.html").read_text(encoding="utf-8")
     head = head.replace(
         'href="components/highlight-features/highlight.css"',
-        'href="components/highlight-features/highlight.css?v=8"',
+        'href="components/highlight-features/highlight.css?v=9"',
     ).replace(
         'href="components/master/master.css"',
         'href="components/master/master.css?v=1"',
     )
     if "components/master/master.css" not in head:
         head = head.replace(
-            'href="components/highlight-features/highlight.css?v=8"',
-            'href="components/highlight-features/highlight.css?v=8"\n'
+            'href="components/highlight-features/highlight.css?v=9"',
+            'href="components/highlight-features/highlight.css?v=9"\n'
             '<link rel=stylesheet href="components/master/master.css?v=1">',
             1,
         )
@@ -355,7 +355,7 @@ def build() -> None:
         + highlight
         + master
         + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
-        + '<script src="components/highlight-features/highlight.js?v=25"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=26"></script>\n'
         + '<script src="components/master/master.js?v=3"></script>\n'
         + '<script src="components/mockup-cases/mockup-cases.js?v=12"></script>\n'
         + "</body></html>\n"

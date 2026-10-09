@@ -22,6 +22,8 @@
     mobile: "",
     // Banner is 16:9. Without an explicit ratio s-image falls back to a square box and letterboxes the image.
     ratio: "16/9",
+    // Smallest banner height (px) on very short screens; below that the page scrolls.
+    minHeight: 160,
     alt: "14-day free trial with unlimited features: no charge, full access, free plan available, 50,000+ active products, unlimited filters, smart search, free theme customization, advanced features, live chat support",
     cta: "Continue"
   };
@@ -359,11 +361,28 @@
       var src = (mobile && WELCOME.mobile) || WELCOME.desktop;
       return (
         '<s-stack gap="base">' +
+        '<div class="fdt-hf__welcome-media">' +
         '<s-image src="' + esc(src) + '" alt="' + esc(WELCOME.alt) + '" aspectRatio="' + WELCOME.ratio + '" objectFit="cover" inlineSize="fill" borderRadius="base"></s-image>' +
-        '<s-stack direction="inline" justifyContent="end">' +
+        "</div>" +
+        '<s-stack direction="inline" justifyContent="end" data-welcome-actions="1">' +
         '<s-button type="button" variant="primary" data-continue="1">' + esc(WELCOME.cta) + "</s-button>" +
         "</s-stack></s-stack>"
       );
+    }
+
+    // Shrink the banner (keeping 16:9) so the image and Continue fit in the visible app area.
+    function fitWelcome() {
+      var media = bodyEl.querySelector(".fdt-hf__welcome-media");
+      var scroller = options.fitEl;
+      if (!media || !scroller || scroller.hidden) return;
+      media.style.maxWidth = "";
+      var actions = bodyEl.querySelector("[data-welcome-actions]");
+      var top = media.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+      // Continue row + stack gap + card padding + overlay bottom padding.
+      var reserve = (actions ? actions.getBoundingClientRect().height : 32) + 16 + 16 + 24;
+      var height = Math.max(WELCOME.minHeight, scroller.clientHeight - top - reserve);
+      var parts = WELCOME.ratio.split("/");
+      media.style.maxWidth = Math.floor(height * Number(parts[0]) / Number(parts[1])) + "px";
     }
 
     // Welcome step hides the section heading, intro line and tabs; the card stays in place.
@@ -382,6 +401,8 @@
         setChrome(true);
         tabsEl.innerHTML = "";
         bodyEl.innerHTML = welcomeHtml();
+        fitWelcome();
+        requestAnimationFrame(fitWelcome);
         return;
       }
       setChrome(false);
@@ -547,6 +568,7 @@
         viewFeatureOnce();
       },
       refresh: function () { render(); },
+      fit: function () { if (options.welcome && step === "welcome") fitWelcome(); },
       current: current,
       restore: goToCode
     };
@@ -813,6 +835,7 @@
     tour: true,
     welcome: true,
     sectionEl: section,
+    fitEl: root,
     introEl: intro,
     onFinish: function () { finishHighlight("get_started"); }
   });
@@ -834,6 +857,7 @@
     restoreBack();
   });
   window.addEventListener("resize", place);
+  window.addEventListener("resize", function () { if (pageWidget) pageWidget.fit(); });
   if (frame) frame.addEventListener("load", function () {
     wireHelpLink();
     if (mode === "home") mountHomeCard();
