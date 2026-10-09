@@ -74,21 +74,11 @@
 .fdt-review__thumb.is-anim .fdt-review__ico{animation:none}
 .fdt-review__card--thumbs.fdt-fade-in .fdt-review__wave{animation:none}
 .fdt-review__ripple,.fdt-review__burst{display:none}
-.fdt-review__feedback-btn,.fdt-review__feedback-btn-ico{transition:background .15s ease-out}
-.fdt-review__feedback-btn:hover .fdt-review__feedback-btn-ico,.fdt-review__feedback-btn:active{transform:none}
 .fdt-fade-in{animation:none}
 }
-.fdt-review__card--thanks{display:flex;align-items:center;min-block-size:72px}
+.fdt-review__card--thanks{display:flex;align-items:center;min-block-size:72px;padding-inline-end:44px}
 .fdt-review__party{flex-shrink:0}
-.fdt-review__card--feedback{display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;padding-inline-end:44px;text-align:start;box-shadow:none}
-.fdt-review__feedback-title{flex:1 1 150px;min-width:0;margin:0;font-size:14px;font-weight:600;line-height:1.35;color:var(--p-color-text,#303030)}
-.fdt-review__feedback-btn{flex:0 0 auto;margin-inline:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border:0;border-radius:var(--p-border-radius-200,8px);background:var(--p-color-bg-fill-brand,#303030);color:var(--p-color-text-brand-on-bg-fill,#fff);font:inherit;font-size:13px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,transform .15s ease-out}
-.fdt-review__feedback-btn:hover{background:var(--p-color-bg-fill-brand-hover,#1a1a1a)}
-.fdt-review__feedback-btn:hover .fdt-review__feedback-btn-ico{transform:scale(1.05)}
-.fdt-review__feedback-btn:active{background:var(--p-color-bg-fill-brand-active,#1a1a1a);transform:scale(.97)}
-.fdt-review__feedback-btn:focus-visible{outline:2px solid var(--p-color-border-focus,#005bd3);outline-offset:2px}
-.fdt-review__feedback-btn-ico{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;transition:transform .15s ease-out}
-.fdt-review__feedback-btn-ico svg{display:block;width:20px;height:20px}
+[data-fdt-column-banner][hidden]{display:none!important}
 @media (max-width:47.9975em){
 .fdt-review-mobile-host{display:block}
 .fdt-review-mobile-host:empty{display:none}
@@ -1276,41 +1266,40 @@
     </div>
   </div>
 
-  <!-- Rate prompt (UI-05): replaces the thumbs in the same card after the thumbs-up hold. -->
+  <!-- Rate prompt (UI-05): replaces the thumbs in the same card after the thumbs-up hold. Neutral wording (App Store 1.3.1). -->
   <div class="fdt-review__card fdt-review__card--rate" data-view="rate" hidden>
     <button type="button" class="fdt-review__dismiss" data-action="dismiss-rate" aria-label="Dismiss">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
-    <p class="fdt-review__rate-heading">Love Findter?</p>
-    <p class="fdt-review__rate-text">Rate us on the App Store.</p>
+    <p class="fdt-review__rate-heading">How's Findter working for you?</p>
+    <p class="fdt-review__rate-text">Share your thoughts on the App Store.</p>
     <div class="fdt-review__rate-actions">
       <s-stack direction="inline" gap="small-200" justifyContent="end" alignItems="center">
-        <s-button data-action="rate-no-thanks">Later</s-button>
-        <s-button data-action="rate-take-me" variant="primary">Rate Findter</s-button>
+        <s-button data-action="rate-not-now">Not now</s-button>
+        <s-button data-action="rate-write" variant="primary">Write a review</s-button>
       </s-stack>
     </div>
   </div>
 
+  <!-- Thank you: stays until X or reload (no timer). Thumbs-down entry adds the review link. -->
   <div class="fdt-review__card fdt-review__card--thanks" data-view="thanks" hidden>
-    <s-stack direction="inline" gap="small" alignItems="center">
-      <img class="fdt-review__party" src="https://cdn.shopify.com/s/files/1/0765/0302/3847/files/partying_face_3d.png?v=1787908953" alt="" width="28" height="28">
-      <s-text>Thank you so much for your valuable feedbacks!</s-text>
-    </s-stack>
-  </div>
-
-  <div class="fdt-review__card fdt-review__card--feedback" data-view="feedback" hidden>
-    <button type="button" class="fdt-review__dismiss" data-action="dismiss-feedback" aria-label="Dismiss">
+    <button type="button" class="fdt-review__dismiss" data-action="dismiss-thanks" aria-label="Dismiss">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
-    <p class="fdt-review__feedback-title">Have feedback for us?</p>
-    <button type="button" class="fdt-review__feedback-btn" data-action="open-feedback-banner">
-      <span class="fdt-review__feedback-btn-ico" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path d="M10 2a8 8 0 0 0-8 8v5.5A1.5 1.5 0 0 0 3.5 17H6v1.5a.5.5 0 0 0 .8.4L10.5 16H16.5A1.5 1.5 0 0 0 18 14.5V10a8 8 0 0 0-8-8Z"/></svg>
-      </span>
-      <span>Share feedback</span>
-    </button>
+    <s-stack direction="inline" gap="small" alignItems="center">
+      <img class="fdt-review__party" src="https://cdn.shopify.com/s/files/1/0765/0302/3847/files/partying_face_3d.png?v=1787908953" alt="" width="28" height="28">
+      <s-stack gap="small-300">
+        <s-text>Thank you so much for your valuable feedbacks!</s-text>
+        <s-link data-review-link data-action="review-link" href="https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal" target="_blank" hidden>Write a review on the App Store</s-link>
+      </s-stack>
+    </s-stack>
   </div>
 </div>
+
+<!-- Demo only (?otherBanner=1): another banner in this column, so the review banner skips this load. -->
+<s-banner id="fdt-other-banner" data-fdt-column-banner tone="info" heading="Your free trial ends in 7 days" hidden>
+  Choose a plan to keep Findter running on your store.
+</s-banner>
 
 <div class=Polaris-ShadowBevel style='--pc-shadow-bevel-z-index:32;--pc-shadow-bevel-content-xs:"";--pc-shadow-bevel-box-shadow-xs:var(--p-shadow-100);--pc-shadow-bevel-border-radius-xs:var(--p-border-radius-300)'>
 <div class=Polaris-Box style=--pc-box-background:var(--p-color-bg-surface);--pc-box-min-height:100%;--pc-box-overflow-x:clip;--pc-box-overflow-y:clip;--pc-box-padding-block-start-xs:var(--p-space-400);--pc-box-padding-block-end-xs:var(--p-space-400);--pc-box-padding-inline-start-xs:var(--p-space-400);--pc-box-padding-inline-end-xs:var(--p-space-400)>
@@ -1591,6 +1580,9 @@
 <s-paragraph>
 <s-link id=fdt-hf-reopen href="#feature-highlights">View feature highlights</s-link>
 </s-paragraph>
+<s-paragraph>
+<s-link id=fdt-help-feedback href="#share-feedback">Share feedback</s-link>
+</s-paragraph>
 <s-box>
 <template shadowrootmode=open>
 <style>:host{display:contents}:host,:host *,:host ::after,:host ::before{box-sizing:border-box}:host>*{-webkit-tap-highlight-color:#0000;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:var(--p-font-feature-settings-f4125,"calt"0),normal;text-rendering:optimizeLegibility;font-size:var(--s-global-font-size-f4125,var(--p-font-size-body-medium-f4125,.8125rem));line-height:var(--s-global-line-height-f4125,var(--p-font-line-height-body-medium-f4125,1.25rem));letter-spacing:var(--s-global-letter-spacing-f4125,var(--p-font-letter-spacing-body-medium-f4125,0));font-family:var(--s-global-font-family-f4125,var(--p-font-family-sans-f4125,"Inter","Noto Sans Arabic","Noto Sans Hebrew",-apple-system,BlinkMacSystemFont,"San Francisco","Segoe UI",Roboto,"Helvetica Neue",sans-serif));font-weight:var(--s-global-font-weight-f4125,var(--p-font-weight-regular-f4125,450));font-variant:normal;color:var(--s-global-color-f4125,var(--p-color-text-f4125,rgba(48,48,48,1)));text-shadow:none;text-transform:none;font-style:normal;text-align:start;text-align-last:auto;text-indent:0}</style>
@@ -1863,7 +1855,6 @@
   var STORAGE_KEY = "findter.review.banner.v1." + SHOP;
   var LISTING =
     "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal";
-  var THANKS_MS = 10000;
   var INSTALL_DAYS = 14;
   // Hold the thumbs card after a click so the press/pop/confetti finishes,
   // then open the rate modal (UI-05). Reduced-motion is shorter.
@@ -1887,19 +1878,27 @@
   var isDevStore = params.get("store") === "dev";
   var forceFail = params.get("reviewFail") === "1";
   var demo = params.get("review") || "";
+  // Demo only: show another banner in the same column, so the review banner
+  // skips this load (one banner per area).
+  var otherBanner = params.get("otherBanner") === "1";
+  var resetFromQuery = params.get("resetReviewBanner") === "1";
 
   var events = [];
   var segments = [];
   var state = loadState();
   var modalEntry = null;
   var closingFromAction = null;
-  var thanksTimer = null;
-  var impressed = { thumbs: false, feedback: false };
+  // Thank you stays until X or reload. Entry decides whether it carries the review link.
+  var thanksEntry = null;
+  var impressed = { thumbs: false };
   var hoverSeen = {};
   var thumbsLocked = false;
 
   var root = document.getElementById("fdt-review-root");
-  var modal = document.getElementById("fdt-feedback-modal");  var categoryEl = document.getElementById("fdt-feedback-category");
+  var otherBannerEl = document.getElementById("fdt-other-banner");
+  var helpFeedbackLink = document.getElementById("fdt-help-feedback");
+  var modal = document.getElementById("fdt-feedback-modal");
+  var categoryEl = document.getElementById("fdt-feedback-category");
   var messageEl = document.getElementById("fdt-feedback-message");
   var fileEl = document.getElementById("fdt-feedback-file");
   var errorEl = document.getElementById("fdt-feedback-error");
@@ -1920,9 +1919,12 @@
   desktopAnchor = root.parentNode;
   ensureMobileHost();
 
-  if (demo === "reset") {
+  if (demo === "reset" || resetFromQuery) {
     resetDemo();
   }
+  if (resetFromQuery) dropResetParam();
+  if (otherBanner && otherBannerEl) otherBannerEl.hidden = false;
+  if (demo === "thanks") thanksEntry = "thumbs_up";
 
   bind();
   placeForViewport();
@@ -1934,7 +1936,6 @@
       thumbsDismissed: false,
       reviewPathDone: false,
       feedbackSubmitted: false,
-      feedbackBannerHidden: false,
       lifetimeDismissCount: 0,
       lifetimeModalXCount: 0,
       lifetimeNeverMindCount: 0
@@ -1961,14 +1962,30 @@
   function resetDemo() {
     state = defaultState();
     saveState();
-    impressed = { thumbs: false, feedback: false };
+    impressed = { thumbs: false };
     hoverSeen = {};
     thumbsLocked = false;
-    clearTimeout(thanksTimer);
-    thanksTimer = null;
+    thanksEntry = null;
     modalEntry = null;
     closingFromAction = null;
     if (root) render();
+  }
+
+  // ?resetReviewBanner=1 runs once: drop it so the next reload shows real state.
+  function dropResetParam() {
+    [window, window.parent].forEach(function (win) {
+      try {
+        var p = new URLSearchParams(win.location.search);
+        if (!p.has("resetReviewBanner")) return;
+        p.delete("resetReviewBanner");
+        var query = p.toString();
+        win.history.replaceState(
+          win.history.state,
+          "",
+          win.location.pathname + (query ? "?" + query : "") + win.location.hash
+        );
+      } catch (e) { /* cross-origin */ }
+    });
   }
 
   function envelope(extra) {
@@ -2006,7 +2023,7 @@
   }
 
   function showView(name) {
-    ["thumbs", "rate", "thanks", "feedback"].forEach(function (key) {
+    ["thumbs", "rate", "thanks"].forEach(function (key) {
       var el = view(key);
       if (!el) return;
       var show = key === name;
@@ -2157,21 +2174,23 @@
     spawnRipple(btn);
   }
 
+  function otherBannerVisible() {
+    var column = desktopAnchor || root.parentNode;
+    var other = column && column.querySelector("[data-fdt-column-banner]:not([hidden])");
+    return !!other;
+  }
+
+  // No banner shows itself on a timer. The standalone feedback banner is gone;
+  // feedback lives in Help & Support. Development stores get no review banner.
   function currentMode() {
-    if (demo === "thanks") return "thanks";
-    if (demo === "feedback") return "feedback";
+    if (thanksEntry) return "thanks";
+    if (otherBannerVisible()) return null;
     if (demo === "thumbs") return "thumbs";
 
-    if (isDevStore) {
-      if (state.feedbackBannerHidden || state.feedbackSubmitted) return null;
-      return "feedback";
-    }
+    if (isDevStore) return null;
     if (state.thumbsDismissed) return null;
     if (state.feedbackSubmitted) return null;
-    if (state.reviewPathDone) {
-      if (state.feedbackBannerHidden) return null;
-      return "feedback";
-    }
+    if (state.reviewPathDone) return null;
     return "thumbs";
   }
 
@@ -2181,17 +2200,14 @@
       showView(null);
       return;
     }
+    if (mode === "thanks") {
+      var link = root.querySelector("[data-review-link]");
+      if (link) link.hidden = thanksEntry !== "thumbs_down";
+    }
     showView(mode);
     if (mode === "thumbs" && !impressed.thumbs) {
       impressed.thumbs = true;
       track("review_banner_impressed", { banner_variant: "thumbs" });
-    }
-    if (mode === "feedback" && !impressed.feedback) {
-      impressed.feedback = true;
-      track("feedback_banner_impressed", {
-        banner_variant: "feedback_standalone",
-        reason: isDevStore ? "development_store" : "after_review_path"
-      });
     }
   }
 
@@ -2296,14 +2312,22 @@
     if (errorEl) errorEl.hidden = false;
   }
 
-  function showThanksThen(next) {
-    clearTimeout(thanksTimer);
-    showView("thanks");
-    thanksTimer = setTimeout(function () {
-      thanksTimer = null;
-      if (typeof next === "function") next();
-      else render();
-    }, THANKS_MS);
+  // Thank you stays put until the merchant clicks X or reloads. No timer.
+  function showThanks(entry) {
+    thanksEntry = entry;
+    render();
+  }
+
+  function onDismissThanks() {
+    thanksEntry = null;
+    render();
+  }
+
+  function onReviewLink() {
+    track("review_link_clicked", {
+      entry: "thumbs_down_thank_you",
+      target_url: LISTING
+    });
   }
 
   // Rate prompt (UI-05) replaces the thumbs inside the same banner card.
@@ -2312,25 +2336,23 @@
     track("review_modal_opened");
   }
 
-  // "Take me to it" / "No thanks": Thank you 10s, then the standalone
-  // feedback banner (BR-05, BR-23). No Crisp segment here.
+  // "Write a review" / "Not now": Thank you until X or reload; the thumbs
+  // banner does not come back on the next load. No Crisp segment here.
   function onRateChoice(action) {
-    if (action === "take_me") {
-      track("review_modal_take_me_clicked", { target_url: LISTING });
+    if (action === "write") {
+      track("review_prompt_write_clicked", { target_url: LISTING });
       window.open(LISTING, "_blank", "noopener,noreferrer");
     } else {
-      track("review_modal_no_thanks_clicked");
+      track("review_prompt_not_now_clicked");
     }
     state.reviewPathDone = true;
     saveState();
-    showThanksThen(function () {
-      render();
-    });
+    showThanks("thumbs_up");
   }
 
   // X on the rate prompt: hide the thumbs banner for good (BR-24).
   function onRateDismissed() {
-    track("review_modal_dismissed");
+    track("review_prompt_dismissed");
     state.thumbsDismissed = true;
     saveState();
     render();
@@ -2373,21 +2395,10 @@
     render();
   }
 
-  function onDismissFeedback() {
-    state.feedbackBannerHidden = true;
-    saveState();
-    track("feedback_banner_dismissed", {
-      dismiss_type: "close_x",
-      reason: isDevStore ? "development_store" : "after_review_path"
-    });
-    render();
-  }
-
-  function onOpenFeedbackBanner() {
-    track("feedback_banner_clicked", {
-      reason: isDevStore ? "development_store" : "after_review_path"
-    });
-    openModal("feedback_banner");
+  // Help & Support → "Share feedback": the fixed feedback channel.
+  function onHelpFeedback() {
+    track("help_feedback_link_clicked", { source: "homepage_help" });
+    openModal("homepage_help");
   }
 
   function onModalClose(action) {
@@ -2463,23 +2474,18 @@
       });
 
       closingFromAction = "send";
-      if (entry === "feedback_banner") {
+      if (entry === "homepage_help") {
+        // Help & Support entry leaves the review banner as it is.
         assignSegment("findter_feedback", "ET-08");
-        state.feedbackBannerHidden = true;
-        state.feedbackSubmitted = true;
-        saveState();
         closeModal();
         modalEntry = null;
-        render();
       } else {
         assignSegment("findter_unhappy", "ET-08");
         state.feedbackSubmitted = true;
         saveState();
         closeModal();
         modalEntry = null;
-        showThanksThen(function () {
-          render();
-        });
+        showThanks("thumbs_down");
       }
     }, 400);
   }
@@ -2492,11 +2498,11 @@
       if (action === "review-path") onReviewPath(btn);
       else if (action === "feedback-path") onFeedbackPath(btn);
       else if (action === "dismiss-banner") onDismissBanner();
-      else if (action === "dismiss-feedback") onDismissFeedback();
-      else if (action === "open-feedback-banner") onOpenFeedbackBanner();
-      else if (action === "rate-take-me") onRateChoice("take_me");
-      else if (action === "rate-no-thanks") onRateChoice("no_thanks");
+      else if (action === "rate-write") onRateChoice("write");
+      else if (action === "rate-not-now") onRateChoice("not_now");
       else if (action === "dismiss-rate") onRateDismissed();
+      else if (action === "dismiss-thanks") onDismissThanks();
+      else if (action === "review-link") onReviewLink();
     });
 
     root.addEventListener("mouseover", function (ev) {
@@ -2508,6 +2514,13 @@
       hoverSeen[target] = true;
       track("review_banner_hovered", { hover_target: target });
     });
+
+    if (helpFeedbackLink) {
+      helpFeedbackLink.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        onHelpFeedback();
+      });
+    }
 
     document.addEventListener(
       "click",

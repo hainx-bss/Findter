@@ -3,7 +3,6 @@
   var STORAGE_KEY = "findter.review.banner.v1." + SHOP;
   var LISTING =
     "https://apps.shopify.com/findter-custom-filter-search#modal-show=WriteReviewModal";
-  var THANKS_MS = 10000;
   var INSTALL_DAYS = 14;
   // Hold the thumbs card after a click so the press/pop/confetti finishes,
   // then open the rate modal (UI-05). Reduced-motion is shorter.
@@ -27,19 +26,27 @@
   var isDevStore = params.get("store") === "dev";
   var forceFail = params.get("reviewFail") === "1";
   var demo = params.get("review") || "";
+  // Demo only: show another banner in the same column, so the review banner
+  // skips this load (one banner per area).
+  var otherBanner = params.get("otherBanner") === "1";
+  var resetFromQuery = params.get("resetReviewBanner") === "1";
 
   var events = [];
   var segments = [];
   var state = loadState();
   var modalEntry = null;
   var closingFromAction = null;
-  var thanksTimer = null;
-  var impressed = { thumbs: false, feedback: false };
+  // Thank you stays until X or reload. Entry decides whether it carries the review link.
+  var thanksEntry = null;
+  var impressed = { thumbs: false };
   var hoverSeen = {};
   var thumbsLocked = false;
 
   var root = document.getElementById("fdt-review-root");
-  var modal = document.getElementById("fdt-feedback-modal");  var categoryEl = document.getElementById("fdt-feedback-category");
+  var otherBannerEl = document.getElementById("fdt-other-banner");
+  var helpFeedbackLink = document.getElementById("fdt-help-feedback");
+  var modal = document.getElementById("fdt-feedback-modal");
+  var categoryEl = document.getElementById("fdt-feedback-category");
   var messageEl = document.getElementById("fdt-feedback-message");
   var fileEl = document.getElementById("fdt-feedback-file");
   var errorEl = document.getElementById("fdt-feedback-error");
@@ -60,9 +67,12 @@
   desktopAnchor = root.parentNode;
   ensureMobileHost();
 
-  if (demo === "reset") {
+  if (demo === "reset" || resetFromQuery) {
     resetDemo();
   }
+  if (resetFromQuery) dropResetParam();
+  if (otherBanner && otherBannerEl) otherBannerEl.hidden = false;
+  if (demo === "thanks") thanksEntry = "thumbs_up";
 
   bind();
   placeForViewport();
@@ -74,7 +84,6 @@
       thumbsDismissed: false,
       reviewPathDone: false,
       feedbackSubmitted: false,
-      feedbackBannerHidden: false,
       lifetimeDismissCount: 0,
       lifetimeModalXCount: 0,
       lifetimeNeverMindCount: 0
@@ -101,14 +110,30 @@
   function resetDemo() {
     state = defaultState();
     saveState();
-    impressed = { thumbs: false, feedback: false };
+    impressed = { thumbs: false };
     hoverSeen = {};
     thumbsLocked = false;
-    clearTimeout(thanksTimer);
-    thanksTimer = null;
+    thanksEntry = null;
     modalEntry = null;
     closingFromAction = null;
     if (root) render();
+  }
+
+  // ?resetReviewBanner=1 runs once: drop it so the next reload shows real state.
+  function dropResetParam() {
+    [window, window.parent].forEach(function (win) {
+      try {
+        var p = new URLSearchParams(win.location.search);
+        if (!p.has("resetReviewBanner")) return;
+        p.delete("resetReviewBanner");
+        var query = p.toString();
+        win.history.replaceState(
+          win.history.state,
+          "",
+          win.location.pathname + (query ? "?" + query : "") + win.location.hash
+        );
+      } catch (e) { /* cross-origin */ }
+    });
   }
 
   function envelope(extra) {
@@ -146,7 +171,7 @@
   }
 
   function showView(name) {
-    ["thumbs", "rate", "thanks", "feedback"].forEach(function (key) {
+    ["thumbs", "rate", "thanks"].forEach(function (key) {
       var el = view(key);
       if (!el) return;
       var show = key === name;
@@ -297,21 +322,23 @@
     spawnRipple(btn);
   }
 
+  function otherBannerVisible() {
+    var column = desktopAnchor || root.parentNode;
+    var other = column && column.querySelector("[data-fdt-column-banner]:not([hidden])");
+    return !!other;
+  }
+
+  // No banner shows itself on a timer. The standalone feedback banner is gone;
+  // feedback lives in Help & Support. Development stores get no review banner.
   function currentMode() {
-    if (demo === "thanks") return "thanks";
-    if (demo === "feedback") return "feedback";
+    if (thanksEntry) return "thanks";
+    if (otherBannerVisible()) return null;
     if (demo === "thumbs") return "thumbs";
 
-    if (isDevStore) {
-      if (state.feedbackBannerHidden || state.feedbackSubmitted) return null;
-      return "feedback";
-    }
+    if (isDevStore) return null;
     if (state.thumbsDismissed) return null;
     if (state.feedbackSubmitted) return null;
-    if (state.reviewPathDone) {
-      if (state.feedbackBannerHidden) return null;
-      return "feedback";
-    }
+    if (state.reviewPathDone) return null;
     return "thumbs";
   }
 
@@ -321,17 +348,14 @@
       showView(null);
       return;
     }
+    if (mode === "thanks") {
+      var link = root.querySelector("[data-review-link]");
+      if (link) link.hidden = thanksEntry !== "thumbs_down";
+    }
     showView(mode);
     if (mode === "thumbs" && !impressed.thumbs) {
       impressed.thumbs = true;
       track("review_banner_impressed", { banner_variant: "thumbs" });
-    }
-    if (mode === "feedback" && !impressed.feedback) {
-      impressed.feedback = true;
-      track("feedback_banner_impressed", {
-        banner_variant: "feedback_standalone",
-        reason: isDevStore ? "development_store" : "after_review_path"
-      });
     }
   }
 
@@ -436,14 +460,22 @@
     if (errorEl) errorEl.hidden = false;
   }
 
-  function showThanksThen(next) {
-    clearTimeout(thanksTimer);
-    showView("thanks");
-    thanksTimer = setTimeout(function () {
-      thanksTimer = null;
-      if (typeof next === "function") next();
-      else render();
-    }, THANKS_MS);
+  // Thank you stays put until the merchant clicks X or reloads. No timer.
+  function showThanks(entry) {
+    thanksEntry = entry;
+    render();
+  }
+
+  function onDismissThanks() {
+    thanksEntry = null;
+    render();
+  }
+
+  function onReviewLink() {
+    track("review_link_clicked", {
+      entry: "thumbs_down_thank_you",
+      target_url: LISTING
+    });
   }
 
   // Rate prompt (UI-05) replaces the thumbs inside the same banner card.
@@ -452,25 +484,23 @@
     track("review_modal_opened");
   }
 
-  // "Take me to it" / "No thanks": Thank you 10s, then the standalone
-  // feedback banner (BR-05, BR-23). No Crisp segment here.
+  // "Write a review" / "Not now": Thank you until X or reload; the thumbs
+  // banner does not come back on the next load. No Crisp segment here.
   function onRateChoice(action) {
-    if (action === "take_me") {
-      track("review_modal_take_me_clicked", { target_url: LISTING });
+    if (action === "write") {
+      track("review_prompt_write_clicked", { target_url: LISTING });
       window.open(LISTING, "_blank", "noopener,noreferrer");
     } else {
-      track("review_modal_no_thanks_clicked");
+      track("review_prompt_not_now_clicked");
     }
     state.reviewPathDone = true;
     saveState();
-    showThanksThen(function () {
-      render();
-    });
+    showThanks("thumbs_up");
   }
 
   // X on the rate prompt: hide the thumbs banner for good (BR-24).
   function onRateDismissed() {
-    track("review_modal_dismissed");
+    track("review_prompt_dismissed");
     state.thumbsDismissed = true;
     saveState();
     render();
@@ -513,21 +543,10 @@
     render();
   }
 
-  function onDismissFeedback() {
-    state.feedbackBannerHidden = true;
-    saveState();
-    track("feedback_banner_dismissed", {
-      dismiss_type: "close_x",
-      reason: isDevStore ? "development_store" : "after_review_path"
-    });
-    render();
-  }
-
-  function onOpenFeedbackBanner() {
-    track("feedback_banner_clicked", {
-      reason: isDevStore ? "development_store" : "after_review_path"
-    });
-    openModal("feedback_banner");
+  // Help & Support → "Share feedback": the fixed feedback channel.
+  function onHelpFeedback() {
+    track("help_feedback_link_clicked", { source: "homepage_help" });
+    openModal("homepage_help");
   }
 
   function onModalClose(action) {
@@ -603,23 +622,18 @@
       });
 
       closingFromAction = "send";
-      if (entry === "feedback_banner") {
+      if (entry === "homepage_help") {
+        // Help & Support entry leaves the review banner as it is.
         assignSegment("findter_feedback", "ET-08");
-        state.feedbackBannerHidden = true;
-        state.feedbackSubmitted = true;
-        saveState();
         closeModal();
         modalEntry = null;
-        render();
       } else {
         assignSegment("findter_unhappy", "ET-08");
         state.feedbackSubmitted = true;
         saveState();
         closeModal();
         modalEntry = null;
-        showThanksThen(function () {
-          render();
-        });
+        showThanks("thumbs_down");
       }
     }, 400);
   }
@@ -632,11 +646,11 @@
       if (action === "review-path") onReviewPath(btn);
       else if (action === "feedback-path") onFeedbackPath(btn);
       else if (action === "dismiss-banner") onDismissBanner();
-      else if (action === "dismiss-feedback") onDismissFeedback();
-      else if (action === "open-feedback-banner") onOpenFeedbackBanner();
-      else if (action === "rate-take-me") onRateChoice("take_me");
-      else if (action === "rate-no-thanks") onRateChoice("no_thanks");
+      else if (action === "rate-write") onRateChoice("write");
+      else if (action === "rate-not-now") onRateChoice("not_now");
       else if (action === "dismiss-rate") onRateDismissed();
+      else if (action === "dismiss-thanks") onDismissThanks();
+      else if (action === "review-link") onReviewLink();
     });
 
     root.addEventListener("mouseover", function (ev) {
@@ -648,6 +662,13 @@
       hoverSeen[target] = true;
       track("review_banner_hovered", { hover_target: target });
     });
+
+    if (helpFeedbackLink) {
+      helpFeedbackLink.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        onHelpFeedback();
+      });
+    }
 
     document.addEventListener(
       "click",
