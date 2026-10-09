@@ -96,9 +96,3 @@
   max-block-size: 22rem;
   overflow: hidden;
 }
-
-/* Welcome step banner: JS caps max-width so the 16:9 image and Continue fit the visible area. */
-#fdt-hf .fdt-hf__welcome-media {
-  width: 100%;
-  margin-inline: auto;
-}

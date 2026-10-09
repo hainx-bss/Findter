@@ -31,6 +31,7 @@
   function renderMenu() {
     menu.innerHTML =
       '<p class="fdt-mockup-menu__label">Mockup cases</p>' +
+      '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="banner">View banner</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="highlight">View highlight features</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="master">View Master</button>' +
       '<button type="button" class="fdt-mockup-menu__item" role="menuitem" data-case="theme-editor">View Theme Editor</button>' +
@@ -69,7 +70,19 @@
 
   function runCase(name) {
     setOpen(false);
+    if (name === "banner") {
+      if (window.FindterHighlight && document.getElementById("fdt-hf")) {
+        document.getElementById("fdt-hf").hidden = true;
+      }
+      if (window.FindterWelcome && typeof window.FindterWelcome.show === "function") {
+        window.FindterWelcome.show();
+      }
+      return;
+    }
     if (name === "highlight") {
+      if (window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
+        window.FindterWelcome.hide();
+      }
       if (window.FindterMaster && typeof window.FindterMaster.hide === "function") {
         window.FindterMaster.hide();
       }
@@ -79,6 +92,9 @@
       return;
     }
     if (name === "master") {
+      if (window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
+        window.FindterWelcome.hide();
+      }
       if (window.FindterMaster && typeof window.FindterMaster.show === "function") {
         window.FindterMaster.show();
       }

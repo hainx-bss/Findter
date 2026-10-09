@@ -9,25 +9,8 @@
     indexCompletedAt: "findter.highlight.indexCompletedAt",
     expired: "findter.highlight.expired",
     // Homepage card X: hidden for good (mock: localStorage stands in for per-shop storage).
-    cardDismissed: "findter.highlight.cardDismissed",
-    // Mock install record: real app reads install_id from the shop's install.
-    installId: "findter.install.id",
-    isReinstall: "findter.install.isReinstall"
+    cardDismissed: "findter.highlight.cardDismissed"
   };
-  var DEFAULT_INSTALL_ID = "ins_mock_1";
-  // Welcome step: first step of the Highlight card on the welcome page (was the Welcome Modal image).
-  // mobile: "" → the desktop image is scaled down.
-  var WELCOME = {
-    desktop: "https://cdn.shopify.com/s/files/1/0765/0302/3847/files/welcom-banner_ae9cedd4-0385-4d08-b179-2dda6d7801b5.png?v=1789554422",
-    mobile: "",
-    // Banner is 16:9. Without an explicit ratio s-image falls back to a square box and letterboxes the image.
-    ratio: "16/9",
-    // Smallest banner height (px) on very short screens; below that the page scrolls.
-    minHeight: 160,
-    alt: "14-day free trial with unlimited features: no charge, full access, free plan available, 50,000+ active products, unlimited filters, smart search, free theme customization, advanced features, live chat support",
-    cta: "Continue"
-  };
-  var LOCALE = (document.documentElement.lang || "en").slice(0, 2);
   var EMPTY_PREVIEW = "Preview coming soon.";
   var SESSION_HIDE = "findter.highlight.sessionHide";
   var BACK_TARGET = "findter.highlight.backTarget";
@@ -63,8 +46,7 @@
   var advancedFocus = document.getElementById("fdt-hf-advanced-focus");
   var mediaModal = document.getElementById("fdt-hf-media");
   var mediaStage = document.getElementById("fdt-hf-media-stage");
-  var section = document.getElementById("fdt-hf-section");
-  var intro = document.getElementById("fdt-hf-intro");
+  var welcome = document.getElementById("fdt-welcome");
   var frame = document.querySelector("iframe[name=app-iframe]");
   var pageWidget = null;
   var homeWidget = null;
@@ -76,7 +58,10 @@
   try { localStorage.removeItem("findter.highlight.items.v5"); } catch (error) {}
   try { localStorage.removeItem("findter.highlight.items.v6"); } catch (error) {}
 
-  function clearSeenFlags() {
+  // Demo reset: ?resetHighlight=1 clears the welcome + Homepage card flags, then drops the param.
+  (function resetFromQuery() {
+    var params = new URLSearchParams(location.search);
+    if (params.get("resetHighlight") !== "1") return;
     try {
       localStorage.removeItem(KEY.continueClicked);
       localStorage.removeItem(KEY.viewFeature);
@@ -85,34 +70,7 @@
       sessionStorage.removeItem(SESSION_HIDE);
       sessionStorage.removeItem(BACK_TARGET);
     } catch (error) {}
-  }
-
-  function installId() {
-    try { return localStorage.getItem(KEY.installId) || DEFAULT_INSTALL_ID; } catch (error) { return DEFAULT_INSTALL_ID; }
-  }
-
-  function isReinstall() {
-    try { return localStorage.getItem(KEY.isReinstall) === "true"; } catch (error) { return false; }
-  }
-
-  // Demo params, dropped from the URL once applied:
-  // ?resetHighlight=1 clears the welcome + Homepage card flags (same install).
-  // ?reinstall=1 mocks uninstall + install: new install_id, flags cleared, is_reinstall = true.
-  (function resetFromQuery() {
-    var params = new URLSearchParams(location.search);
-    var reset = params.get("resetHighlight") === "1";
-    var reinstall = params.get("reinstall") === "1";
-    if (!reset && !reinstall) return;
-    clearSeenFlags();
-    if (reinstall) {
-      try {
-        var count = Number(installId().replace(/^\D+/, "")) || 1;
-        localStorage.setItem(KEY.installId, "ins_mock_" + (count + 1));
-        localStorage.setItem(KEY.isReinstall, "true");
-      } catch (error) {}
-    }
     params.delete("resetHighlight");
-    params.delete("reinstall");
     var query = params.toString();
     history.replaceState(history.state, "", location.pathname + (query ? "?" + query : "") + location.hash);
   })();
@@ -200,6 +158,10 @@
 
   function baseEvent(source, slide) {
     return Object.assign({ source: source, indexing_status: indexingStatus() }, slide ? idsFor(slide) : {});
+  }
+
+  function welcomeOpen() {
+    return welcome && !welcome.hidden;
   }
 
   function markExpired() {
@@ -305,7 +267,6 @@
   function tourHtml(tour) {
     if (!tour) return "";
     return (
-      (tour.back ? '<s-button type="button" variant="tertiary" data-back="1">Back</s-button>' : "") +
       '<s-text color="subdued">' + tour.position + " of " + tour.total + (tour.total === 1 ? " feature" : " features") + "</s-text>" +
       '<s-button type="button" variant="primary" data-next="1">' + (tour.last ? "Get started" : "Next feature") + "</s-button>"
     );
@@ -351,61 +312,10 @@
     var index = 0;
     var viewed = false;
     var list = [];
-    // options.welcome: the card opens on the Welcome step; Continue shows the features.
-    var step = "features";
 
     function current() { return list[index] || null; }
 
-    function welcomeHtml() {
-      var mobile = window.matchMedia("(max-width: 767px)").matches;
-      var src = (mobile && WELCOME.mobile) || WELCOME.desktop;
-      return (
-        '<s-stack gap="base">' +
-        '<div class="fdt-hf__welcome-media">' +
-        '<s-image src="' + esc(src) + '" alt="' + esc(WELCOME.alt) + '" aspectRatio="' + WELCOME.ratio + '" objectFit="cover" inlineSize="fill" borderRadius="base"></s-image>' +
-        "</div>" +
-        '<s-stack direction="inline" justifyContent="end" data-welcome-actions="1">' +
-        '<s-button type="button" variant="primary" data-continue="1">' + esc(WELCOME.cta) + "</s-button>" +
-        "</s-stack></s-stack>"
-      );
-    }
-
-    // Shrink the banner (keeping 16:9) so the image and Continue fit in the visible app area.
-    function fitWelcome() {
-      var media = bodyEl.querySelector(".fdt-hf__welcome-media");
-      var scroller = options.fitEl;
-      if (!media || !scroller || scroller.hidden) return;
-      media.style.maxWidth = "";
-      var actions = bodyEl.querySelector("[data-welcome-actions]");
-      var top = media.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
-      // Continue row + stack gap + card padding + overlay bottom padding.
-      var reserve = (actions ? actions.getBoundingClientRect().height : 32) + 16 + 16 + 24;
-      var height = Math.max(WELCOME.minHeight, scroller.clientHeight - top - reserve);
-      var parts = WELCOME.ratio.split("/");
-      media.style.maxWidth = Math.floor(height * Number(parts[0]) / Number(parts[1])) + "px";
-    }
-
-    // Welcome step hides the section heading, intro line and tabs; the card stays in place.
-    function setChrome(onWelcome) {
-      tabsEl.style.display = onWelcome ? "none" : "";
-      if (!options.welcome) return;
-      if (options.sectionEl) {
-        if (onWelcome) options.sectionEl.removeAttribute("heading");
-        else options.sectionEl.setAttribute("heading", "What you can do with Findter");
-      }
-      if (options.introEl) options.introEl.style.display = onWelcome ? "none" : "";
-    }
-
     function render() {
-      if (options.welcome && step === "welcome") {
-        setChrome(true);
-        tabsEl.innerHTML = "";
-        bodyEl.innerHTML = welcomeHtml();
-        fitWelcome();
-        requestAnimationFrame(fitWelcome);
-        return;
-      }
-      setChrome(false);
       list = slides();
       if (!list.length) {
         tabsEl.innerHTML = "";
@@ -423,7 +333,7 @@
       }).join("");
       var kids = childrenOf(slide.group.code);
       var showView = options.alwaysView || indexed();
-      var tour = options.tour ? { position: index + 1, total: list.length, last: index === list.length - 1, back: !!options.welcome } : null;
+      var tour = options.tour ? { position: index + 1, total: list.length, last: index === list.length - 1 } : null;
       if (!kids.length) {
         bodyEl.innerHTML = previewHtml(slide, showView, "solo", tour);
       } else {
@@ -477,45 +387,12 @@
       render();
     }
 
-    function viewFeatureOnce() {
-      if (viewed || !current() || options.source !== "highlight_page") return;
-      viewed = true;
-      track("highlight_feature_viewed", baseEvent(options.source, current()));
-    }
-
-    function showWelcomeStep() {
-      step = "welcome";
-      render();
-      track("welcome_step_viewed", {
-        source: options.source,
-        shop_domain: SHOP,
-        install_id: installId(),
-        is_reinstall: isReinstall(),
-        locale: LOCALE
-      });
-    }
-
-    function continueToFeatures() {
-      track("welcome_continue_clicked", { source: options.source, shop_domain: SHOP, install_id: installId() });
-      step = "features";
-      index = 0;
-      render();
-      viewFeatureOnce();
-    }
-
-    function backToWelcome() {
-      track("highlight_back_to_welcome_clicked", Object.assign(baseEvent(options.source, current()), { install_id: installId() }));
-      showWelcomeStep();
-    }
-
     function goToCode(code) {
       var next = -1;
       slides().forEach(function (slide, i) {
         if (next < 0 && (slide.feature.code === code || slide.group.code === code)) next = i;
       });
       if (next < 0) return false;
-      step = "features";
-      viewed = true;
       index = next;
       render();
       return true;
@@ -526,14 +403,6 @@
       if (tab) selectGroup(tab.getAttribute("data-group"));
     });
     bodyEl.addEventListener("click", function (event) {
-      if (event.target.closest("[data-continue]")) {
-        continueToFeatures();
-        return;
-      }
-      if (event.target.closest("[data-back]")) {
-        backToWelcome();
-        return;
-      }
       if (event.target.closest("[data-next]")) {
         next();
         return;
@@ -558,17 +427,14 @@
       show: function (reset) {
         if (reset) index = 0;
         viewed = false;
-        // Every (re)open of the welcome page starts on the Welcome step.
-        if (options.welcome) {
-          showWelcomeStep();
-          return;
-        }
         render();
         // ET-01 fires on the Highlight page only; the Homepage card is measured by ET-02 / ET-04.
-        viewFeatureOnce();
+        if (!viewed && current() && options.source === "highlight_page") {
+          viewed = true;
+          track("highlight_feature_viewed", baseEvent(options.source, current()));
+        }
       },
       refresh: function () { render(); },
-      fit: function () { if (options.welcome && step === "welcome") fitWelcome(); },
       current: current,
       restore: goToCode
     };
@@ -786,6 +652,10 @@
   }
 
   function present(resetHighlight) {
+    if (welcomeOpen()) {
+      root.hidden = true;
+      return;
+    }
     if (mode === "advanced") {
       root.hidden = false;
       place();
@@ -833,10 +703,6 @@
     source: "highlight_page",
     alwaysView: true,
     tour: true,
-    welcome: true,
-    sectionEl: section,
-    fitEl: root,
-    introEl: intro,
     onFinish: function () { finishHighlight("get_started"); }
   });
 
@@ -857,7 +723,18 @@
     restoreBack();
   });
   window.addEventListener("resize", place);
-  window.addEventListener("resize", function () { if (pageWidget) pageWidget.fit(); });
+  if (welcome) {
+    new MutationObserver(function () {
+      if (welcomeOpen()) {
+        root.hidden = true;
+        return;
+      }
+      // Continue / X / Esc on welcome banner → Highlight Features (not homepage).
+      localStorage.removeItem(KEY.continueClicked);
+      sessionStorage.removeItem(SESSION_HIDE);
+      showHighlight(true);
+    }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
+  }
   if (frame) frame.addEventListener("load", function () {
     wireHelpLink();
     if (mode === "home") mountHomeCard();
@@ -893,6 +770,11 @@
     localStorage.removeItem(KEY.viewFeature);
     localStorage.removeItem(KEY.expired);
     sessionStorage.removeItem(SESSION_HIDE);
+    if (welcome && !welcome.hidden && window.FindterWelcome && typeof window.FindterWelcome.hide === "function") {
+      window.FindterWelcome.hide();
+    } else if (welcome) {
+      welcome.hidden = true;
+    }
     showHighlight(true);
   }
 
