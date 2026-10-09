@@ -26,16 +26,16 @@
     image: assetUrl("preview-image.png")
   };
   var SEED = [
-    { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: MEDIA.longThumb, media: MEDIA.longVideo, mediaType: "video", navigateUrl: "features" },
-    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: MEDIA.shortVideo, mediaType: "video", navigateUrl: "features" },
-    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: MEDIA.image, media: MEDIA.image, mediaType: "image", navigateUrl: "features" },
-    { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "merchandising", parentCode: null, standalone: false, name: "Merchandising", enabled: true, order: 3, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "boost-in-stock-products", parentCode: "merchandising", standalone: false, name: "Boost In-Stock Products", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features" },
-    { code: "hide-out-of-stock-products", parentCode: "merchandising", standalone: false, name: "Hide Out-of-Stock Products", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features" }
+    { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features", benefit: "" },
+    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: MEDIA.longThumb, media: MEDIA.longVideo, mediaType: "video", navigateUrl: "features", benefit: "Let shoppers filter by size, material or any custom field stored in metafields." },
+    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: MEDIA.shortVideo, mediaType: "video", navigateUrl: "features", benefit: "Show colors and patterns as image swatches shoppers can tap to filter." },
+    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: MEDIA.image, media: MEDIA.image, mediaType: "image", navigateUrl: "features", benefit: "Build several separate filters from one data source, such as product tags." },
+    { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features", benefit: "Let shoppers find parts that fit their vehicle by year, make and model." },
+    { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", navigateUrl: "features", benefit: "" },
+    { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features", benefit: "Show filter prices in each shopper's local currency." },
+    { code: "merchandising", parentCode: null, standalone: false, name: "Merchandising", enabled: true, order: 3, thumbnail: "", media: "", navigateUrl: "features", benefit: "" },
+    { code: "boost-in-stock-products", parentCode: "merchandising", standalone: false, name: "Boost In-Stock Products", enabled: true, order: 0, thumbnail: "", media: "", navigateUrl: "features", benefit: "Show in-stock products ahead of out-of-stock ones in results." },
+    { code: "hide-out-of-stock-products", parentCode: "merchandising", standalone: false, name: "Hide Out-of-Stock Products", enabled: true, order: 1, thumbnail: "", media: "", navigateUrl: "features", benefit: "Keep out-of-stock products out of filter and search results." }
   ];
 
   var events = [];
@@ -43,7 +43,6 @@
   var root = document.getElementById("fdt-hf");
   var page = document.getElementById("fdt-hf-page");
   var banner = document.getElementById("fdt-hf-banner");
-  var continueRow = document.getElementById("fdt-hf-continue");
   var advanced = document.getElementById("fdt-hf-advanced");
   var advancedFocus = document.getElementById("fdt-hf-advanced-focus");
   var mediaModal = document.getElementById("fdt-hf-media");
@@ -229,7 +228,6 @@
     banner.textContent = done
       ? "Findter is ready to set up on your theme. Explore the features below or continue to get started."
       : "We\u2019re syncing your products in the background. Feel free to explore Findter in the meantime \u2013 we\u2019ll let you know when it\u2019s done.";
-    continueRow.removeAttribute("hidden");
   }
 
   function imageHtml(url, name) {
@@ -261,8 +259,22 @@
     });
   }
 
+  // Benefit: one short line from Master under the feature name (max ~80 chars).
+  function benefitHtml(feature) {
+    return feature.benefit ? '<s-text color="subdued">' + esc(feature.benefit) + "</s-text>" : "";
+  }
+
+  // Welcome page: progress + Next feature / Get started (the only primary on screen).
+  function tourHtml(tour) {
+    if (!tour) return "";
+    return (
+      '<s-text color="subdued">' + tour.position + " of " + tour.total + (tour.total === 1 ? " feature" : " features") + "</s-text>" +
+      '<s-button type="button" variant="primary" data-next="1">' + (tour.last ? "Get started" : "Next feature") + "</s-button>"
+    );
+  }
+
   // The card frame shows the thumbnail only; media plays in the Preview modal (BR-30).
-  function previewHtml(slide, showView, layout) {
+  function previewHtml(slide, showView, layout, tour) {
     var feature = slide.feature;
     var thumb = feature.thumbnail || "";
     var media = feature.media || "";
@@ -280,12 +292,20 @@
       var inner = thumb ? imageHtml(thumb, feature.name) : firstFrameHtml(feature);
       frameHtml = '<div class="' + wrapClass + '">' + open + inner + "</s-clickable></div>";
     }
-    if (!showView) return frameHtml;
+    if (layout === "solo") frameHtml = benefitHtml(feature) + frameHtml;
+    if (!showView && !tour) return layout === "solo" ? '<s-stack gap="base">' + frameHtml + "</s-stack>" : frameHtml;
+    var setup = showView
+      ? '<s-button type="button" variant="secondary" data-view-code="' + esc(feature.code) + '">Set up this feature</s-button>'
+      : "";
+    if (!tour) {
+      return '<s-stack gap="base">' + frameHtml + '<s-stack direction="inline" justifyContent="end">' + setup + "</s-stack></s-stack>";
+    }
     return (
       '<s-stack gap="base">' + frameHtml +
-      '<s-stack direction="inline" justifyContent="end">' +
-      '<s-button type="button" variant="primary" data-view-code="' + esc(feature.code) + '">View Feature</s-button>' +
-      "</s-stack></s-stack>"
+      '<s-grid gridTemplateColumns="auto 1fr" gap="base" alignItems="center">' +
+      "<div>" + setup + "</div>" +
+      '<s-stack direction="inline" justifyContent="end" alignItems="center" gap="base">' + tourHtml(tour) + "</s-stack>" +
+      "</s-grid></s-stack>"
     );
   }
 
@@ -330,25 +350,27 @@
       });
       tabsEl.innerHTML = visibleGroups.map(function (group) {
         var on = group.code === slide.group.code;
-        return '<s-button type="button" variant="' + (on ? "primary" : "secondary") + '" data-group="' + esc(group.code) + '" role="tab" aria-selected="' + on + '">' + esc(group.name) + "</s-button>";
+        return '<s-button type="button" variant="' + (on ? "secondary" : "tertiary") + '" data-group="' + esc(group.code) + '" role="tab" aria-selected="' + on + '">' + esc(group.name) + "</s-button>";
       }).join("");
       var kids = childrenOf(slide.group.code);
       var showView = options.alwaysView || indexed();
+      var tour = options.tour ? { position: index + 1, total: list.length, last: index === list.length - 1 } : null;
       if (!kids.length) {
-        bodyEl.innerHTML = previewHtml(slide, showView, "solo");
+        bodyEl.innerHTML = previewHtml(slide, showView, "solo", tour);
       } else {
         var rows = kids.map(function (feature) {
           var on = feature.code === slide.feature.code;
           return (
             '<s-clickable padding="base"' + (on ? ' background="subdued"' : "") + ' data-feature="' + esc(feature.code) + '" aria-current="' + on + '">' +
-            '<s-text type="strong">' + esc(feature.name) + "</s-text></s-clickable>"
+            '<s-stack gap="small-500"><s-text type="strong">' + esc(feature.name) + "</s-text>" +
+            benefitHtml(feature) + "</s-stack></s-clickable>"
           );
         }).join("");
         bodyEl.innerHTML =
           '<s-grid gridTemplateColumns="0.38fr 0.62fr" gap="base" alignItems="start">' +
           '<s-box border="base" borderRadius="base">' +
           '<s-stack gap="none">' + rows + "</s-stack></s-box>" +
-          "<div>" + previewHtml(slide, showView, "group") + "</div>" +
+          "<div>" + previewHtml(slide, showView, "group", tour) + "</div>" +
           "</s-grid>";
       }
       drawFirstFrames(bodyEl);
@@ -384,6 +406,18 @@
       render("select");
     }
 
+    // Next feature in this group, then the first feature of the next group; last one finishes.
+    function next() {
+      if (!list.length) return;
+      if (index >= list.length - 1) {
+        if (options.onFinish) options.onFinish();
+        return;
+      }
+      index += 1;
+      track("highlight_feature_selected", Object.assign(baseEvent(options.source, current()), { selection_type: "next" }));
+      render("next");
+    }
+
     function goToCode(code) {
       var next = -1;
       slides().forEach(function (slide, i) {
@@ -400,6 +434,10 @@
       if (tab) selectGroup(tab.getAttribute("data-group"));
     });
     bodyEl.addEventListener("click", function (event) {
+      if (event.target.closest("[data-next]")) {
+        next();
+        return;
+      }
       var view = event.target.closest("[data-view-code]");
       if (view) {
         openView(options.source, itemByCode(view.getAttribute("data-view-code")));
@@ -702,21 +740,30 @@
     showHome();
   }
 
-  pageWidget = createWidget(document.getElementById("fdt-hf-tabs"), document.getElementById("fdt-hf-body"), {
-    source: "highlight_page",
-    autoplay: true,
-    alwaysView: true
-  });
-
-  // Continue is available from the first render; indexing state is only reported.
-  document.getElementById("fdt-hf-home").addEventListener("click", function () {
+  // Skip for now and Get started both save the seen flag and go to the Homepage.
+  // cta tells them apart in highlight_continue_clicked.
+  function finishHighlight(cta) {
     localStorage.setItem(KEY.continueClicked, "true");
     track("highlight_continue_clicked", {
       source: "highlight_page",
       indexing_status: indexingStatus(),
-      shop_domain: SHOP
+      shop_domain: SHOP,
+      cta: cta
     });
     showHome();
+  }
+
+  pageWidget = createWidget(document.getElementById("fdt-hf-tabs"), document.getElementById("fdt-hf-body"), {
+    source: "highlight_page",
+    autoplay: true,
+    alwaysView: true,
+    tour: true,
+    onFinish: function () { finishHighlight("get_started"); }
+  });
+
+  // Skip for now is available from the first render; indexing state is only reported.
+  document.getElementById("fdt-hf-home").addEventListener("click", function () {
+    finishHighlight("skip");
   });
   mediaModal.addEventListener("hide", onMediaHidden);
   mediaModal.addEventListener("afterhide", onMediaHidden);

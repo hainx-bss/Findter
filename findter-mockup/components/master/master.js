@@ -1,16 +1,16 @@
 (function () {
   var KEY = "findter.master.items.v1";
   var SEED = [
-    { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" },
-    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "video", navigateUrl: "features" },
-    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: "", mediaType: "video", navigateUrl: "features" },
-    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: "", media: "", mediaType: "image", navigateUrl: "features" },
-    { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" },
-    { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" },
-    { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" },
-    { code: "merchandising", parentCode: null, standalone: false, name: "Merchandising", enabled: true, order: 3, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" },
-    { code: "boost-in-stock-products", parentCode: "merchandising", standalone: false, name: "Boost In-Stock Products", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" },
-    { code: "hide-out-of-stock-products", parentCode: "merchandising", standalone: false, name: "Hide Out-of-Stock Products", enabled: true, order: 1, thumbnail: "", media: "", mediaType: "", navigateUrl: "features" }
+    { code: "filter", parentCode: null, standalone: false, name: "Filter", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "" },
+    { code: "filter-by-metafields", parentCode: "filter", standalone: false, name: "Filter by Metafields", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "video", navigateUrl: "features", benefit: "Let shoppers filter by size, material or any custom field stored in metafields." },
+    { code: "image-swatches-filter", parentCode: "filter", standalone: false, name: "Image Swatches Filter", enabled: true, order: 1, thumbnail: "", media: "", mediaType: "video", navigateUrl: "features", benefit: "Show colors and patterns as image swatches shoppers can tap to filter." },
+    { code: "multi-filters-one-source", parentCode: "filter", standalone: false, name: "Multi-Filters by One Source", enabled: true, order: 2, thumbnail: "", media: "", mediaType: "image", navigateUrl: "features", benefit: "Build several separate filters from one data source, such as product tags." },
+    { code: "year-make-model", parentCode: null, standalone: true, name: "Year Make Model", enabled: true, order: 1, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "Let shoppers find parts that fit their vehicle by year, make and model." },
+    { code: "market", parentCode: null, standalone: false, name: "Market", enabled: true, order: 2, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "" },
+    { code: "local-currency-adaptation", parentCode: "market", standalone: false, name: "Local Currency Adaptation", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "Show filter prices in each shopper's local currency." },
+    { code: "merchandising", parentCode: null, standalone: false, name: "Merchandising", enabled: true, order: 3, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "" },
+    { code: "boost-in-stock-products", parentCode: "merchandising", standalone: false, name: "Boost In-Stock Products", enabled: true, order: 0, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "Show in-stock products ahead of out-of-stock ones in results." },
+    { code: "hide-out-of-stock-products", parentCode: "merchandising", standalone: false, name: "Hide Out-of-Stock Products", enabled: true, order: 1, thumbnail: "", media: "", mediaType: "", navigateUrl: "features", benefit: "Keep out-of-stock products out of filter and search results." }
   ];
 
   var root = document.getElementById("fdt-master");
@@ -236,6 +236,7 @@
     setField("fdt-master-group-name", "");
     setField("fdt-master-group-standalone", false);
     setField("fdt-master-group-feature-title", "");
+    setField("fdt-master-group-benefit", "");
     setField("fdt-master-group-thumbnail", "");
     setField("fdt-master-group-media", "");
     setField("fdt-master-group-media-type", "");
@@ -249,6 +250,7 @@
     featureModal.setAttribute("heading", "Add Feature");
     setField("fdt-master-feature-parent", parentCode || "");
     setField("fdt-master-feature-title", "");
+    setField("fdt-master-feature-benefit", "");
     setField("fdt-master-feature-thumbnail", "");
     setField("fdt-master-feature-media", "");
     setField("fdt-master-feature-media-type", "");
@@ -274,7 +276,8 @@
       thumbnail: standalone ? getField("fdt-master-group-thumbnail") : "",
       media: standalone ? getField("fdt-master-group-media") : "",
       mediaType: standalone ? getField("fdt-master-group-media-type") : "",
-      navigateUrl: standalone ? getField("fdt-master-group-navigate") : "features"
+      navigateUrl: standalone ? getField("fdt-master-group-navigate") : "features",
+      benefit: standalone ? String(getField("fdt-master-group-benefit")).trim().slice(0, 80) : ""
     };
     if (standalone && getField("fdt-master-group-feature-title")) {
       group.name = String(getField("fdt-master-group-feature-title")).trim() || name;
@@ -303,7 +306,8 @@
       thumbnail: getField("fdt-master-feature-thumbnail"),
       media: getField("fdt-master-feature-media"),
       mediaType: getField("fdt-master-feature-media-type"),
-      navigateUrl: getField("fdt-master-feature-navigate") || "features"
+      navigateUrl: getField("fdt-master-feature-navigate") || "features",
+      benefit: String(getField("fdt-master-feature-benefit")).trim().slice(0, 80)
     });
     writeItems(all);
     expanded[parent] = true;
