@@ -31,7 +31,8 @@ Cloudflare Pages is connected to this repo (no build command, output directory `
 
 - `https://<branch-slug>.<project>.pages.dev/` — branch name lowercased, `/` and other symbols become `-` (e.g. `feat/highlight-feature` → `feat-highlight-feature`).
 - Find the exact URL in Cloudflare → Workers & Pages → the project → **Deployments**, or in the Cloudflare comment on the PR.
-- Add `?resetHighlight=1` to replay the Highlight Features welcome flow.
+- Add `?resetHighlight=1` to replay the "Welcome to Findter" page (Highlight Features) on the same install.
+- Add `?reinstall=1` to mock a reinstall: new `install_id`, seen flags cleared, `is_reinstall: true` on the welcome event.
 
 ## Cursor / Polaris
 
