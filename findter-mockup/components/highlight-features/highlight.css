@@ -22,8 +22,7 @@
   padding-inline: 1rem;
 }
 
-#fdt-hf .fdt-hf__page[hidden],
-#fdt-hf #fdt-hf-continue[hidden] {
+#fdt-hf .fdt-hf__page[hidden] {
   display: none;
 }
 

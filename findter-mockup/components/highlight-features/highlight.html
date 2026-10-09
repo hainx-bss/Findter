@@ -1,10 +1,13 @@
 <div id=fdt-hf class=fdt-hf hidden>
 <div id=fdt-hf-page class=fdt-hf__page>
 <s-stack gap=large>
+<s-grid gridTemplateColumns="1fr auto" gap=base alignItems=start>
 <s-stack gap=small>
 <s-heading>Welcome to Findter</s-heading>
 <s-paragraph color=subdued>Here's a quick look at what Findter can do for your store. Skip anytime – you can find this again in Help.</s-paragraph>
 </s-stack>
+<s-button type=button id=fdt-hf-home variant=tertiary>Skip for now</s-button>
+</s-grid>
 <s-banner id=fdt-hf-banner heading="Getting your store data ready" tone=info>We're syncing your products in the background. Feel free to explore Findter in the meantime – we'll let you know when it's done.</s-banner>
 <s-section heading="What you can do with Findter">
 <s-stack gap=base>
@@ -13,11 +16,6 @@
 <div id=fdt-hf-body></div>
 </s-stack>
 </s-section>
-<div id=fdt-hf-continue>
-<s-stack direction=inline justifyContent=end>
-<s-button type=button id=fdt-hf-home variant=primary>Continue to Homepage</s-button>
-</s-stack>
-</div>
 </s-stack>
 </div>
 <div id=fdt-hf-advanced class=fdt-hf__page hidden>

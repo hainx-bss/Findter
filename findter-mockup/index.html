@@ -2281,10 +2281,13 @@
 <div id=fdt-hf class=fdt-hf hidden>
 <div id=fdt-hf-page class=fdt-hf__page>
 <s-stack gap=large>
+<s-grid gridTemplateColumns="1fr auto" gap=base alignItems=start>
 <s-stack gap=small>
 <s-heading>Welcome to Findter</s-heading>
 <s-paragraph color=subdued>Here's a quick look at what Findter can do for your store. Skip anytime – you can find this again in Help.</s-paragraph>
 </s-stack>
+<s-button type=button id=fdt-hf-home variant=tertiary>Skip for now</s-button>
+</s-grid>
 <s-banner id=fdt-hf-banner heading="Getting your store data ready" tone=info>We're syncing your products in the background. Feel free to explore Findter in the meantime – we'll let you know when it's done.</s-banner>
 <s-section heading="What you can do with Findter">
 <s-stack gap=base>
@@ -2293,11 +2296,6 @@
 <div id=fdt-hf-body></div>
 </s-stack>
 </s-section>
-<div id=fdt-hf-continue>
-<s-stack direction=inline justifyContent=end>
-<s-button type=button id=fdt-hf-home variant=primary>Continue to Homepage</s-button>
-</s-stack>
-</div>
 </s-stack>
 </div>
 <div id=fdt-hf-advanced class=fdt-hf__page hidden>
@@ -2329,6 +2327,7 @@
 <div id=fdt-master-group-standalone-fields hidden>
 <s-stack gap=base>
 <s-text-field id=fdt-master-group-feature-title label="Feature Title"></s-text-field>
+<s-text-field id=fdt-master-group-benefit label=Benefit maxLength=80 details="One short line on what this feature lets merchants or shoppers do. Max 80 characters."></s-text-field>
 <s-text-field id=fdt-master-group-thumbnail label="Thumbnail Link"></s-text-field>
 <s-text-field id=fdt-master-group-media label="Media Link"></s-text-field>
 <s-select id=fdt-master-group-media-type label="Media Type">
@@ -2351,6 +2350,7 @@
 <option value="">Select a group</option>
 </s-select>
 <s-text-field id=fdt-master-feature-title label=Title required></s-text-field>
+<s-text-field id=fdt-master-feature-benefit label=Benefit maxLength=80 details="One short line on what this feature lets merchants or shoppers do. Max 80 characters."></s-text-field>
 <s-text-field id=fdt-master-feature-thumbnail label="Thumbnail Link"></s-text-field>
 <s-text-field id=fdt-master-feature-media label="Media Link"></s-text-field>
 <s-select id=fdt-master-feature-media-type label="Media Type">
@@ -2374,7 +2374,7 @@
 </div>
 <script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>
 <script src="components/welcome-banner/welcome.js?v=3"></script>
-<script src="components/highlight-features/highlight.js?v=20"></script>
-<script src="components/master/master.js?v=1"></script>
+<script src="components/highlight-features/highlight.js?v=21"></script>
+<script src="components/master/master.js?v=2"></script>
 <script src="components/mockup-cases/mockup-cases.js?v=11"></script>
 </body></html>
