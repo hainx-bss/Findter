@@ -355,7 +355,7 @@ def build() -> None:
         + highlight
         + master
         + '<script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script>\n'
-        + '<script src="components/highlight-features/highlight.js?v=24"></script>\n'
+        + '<script src="components/highlight-features/highlight.js?v=25"></script>\n'
         + '<script src="components/master/master.js?v=3"></script>\n'
         + '<script src="components/mockup-cases/mockup-cases.js?v=12"></script>\n'
         + "</body></html>\n"

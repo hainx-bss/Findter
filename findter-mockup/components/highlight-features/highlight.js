@@ -20,6 +20,8 @@
   var WELCOME = {
     desktop: "https://cdn.shopify.com/s/files/1/0765/0302/3847/files/welcom-banner_ae9cedd4-0385-4d08-b179-2dda6d7801b5.png?v=1789554422",
     mobile: "",
+    // Banner is 16:9. Without an explicit ratio s-image falls back to a square box and letterboxes the image.
+    ratio: "16/9",
     alt: "14-day free trial with unlimited features: no charge, full access, free plan available, 50,000+ active products, unlimited filters, smart search, free theme customization, advanced features, live chat support",
     cta: "Continue"
   };
@@ -357,7 +359,7 @@
       var src = (mobile && WELCOME.mobile) || WELCOME.desktop;
       return (
         '<s-stack gap="base">' +
-        '<s-image src="' + esc(src) + '" alt="' + esc(WELCOME.alt) + '" inlineSize="fill" borderRadius="base"></s-image>' +
+        '<s-image src="' + esc(src) + '" alt="' + esc(WELCOME.alt) + '" aspectRatio="' + WELCOME.ratio + '" objectFit="cover" inlineSize="fill" borderRadius="base"></s-image>' +
         '<s-stack direction="inline" justifyContent="end">' +
         '<s-button type="button" variant="primary" data-continue="1">' + esc(WELCOME.cta) + "</s-button>" +
         "</s-stack></s-stack>"
