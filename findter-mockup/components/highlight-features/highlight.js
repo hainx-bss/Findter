@@ -8,8 +8,11 @@
     continueClicked: "findter.highlight.continue",
     viewFeature: "findter.highlight.viewFeature",
     indexCompletedAt: "findter.highlight.indexCompletedAt",
-    expired: "findter.highlight.expired"
+    expired: "findter.highlight.expired",
+    // Homepage card X: hidden for good (mock: localStorage stands in for per-shop storage).
+    cardDismissed: "findter.highlight.cardDismissed"
   };
+  var EMPTY_PREVIEW = "Preview coming soon.";
   var SESSION_HIDE = "findter.highlight.sessionHide";
   var BACK_TARGET = "findter.highlight.backTarget";
   // Absolute URLs so parent overlay and iframe homepage card both resolve.
@@ -56,6 +59,23 @@
   try { localStorage.removeItem("findter.highlight.items.v4"); } catch (error) {}
   try { localStorage.removeItem("findter.highlight.items.v5"); } catch (error) {}
   try { localStorage.removeItem("findter.highlight.items.v6"); } catch (error) {}
+
+  // Demo reset: ?resetHighlight=1 clears the welcome + Homepage card flags, then drops the param.
+  (function resetFromQuery() {
+    var params = new URLSearchParams(location.search);
+    if (params.get("resetHighlight") !== "1") return;
+    try {
+      localStorage.removeItem(KEY.continueClicked);
+      localStorage.removeItem(KEY.viewFeature);
+      localStorage.removeItem(KEY.expired);
+      localStorage.removeItem(KEY.cardDismissed);
+      sessionStorage.removeItem(SESSION_HIDE);
+      sessionStorage.removeItem(BACK_TARGET);
+    } catch (error) {}
+    params.delete("resetHighlight");
+    var query = params.toString();
+    history.replaceState(history.state, "", location.pathname + (query ? "?" + query : "") + location.hash);
+  })();
 
   function readItems() {
     try {
@@ -201,15 +221,15 @@
     }
   }
 
+  // Info only: indexing never blocks Continue to Homepage.
   function renderBanner() {
     var done = indexed();
-    banner.setAttribute("heading", done ? "Data indexing is completed." : "Collecting data");
-    banner.setAttribute("tone", done ? "success" : "warning");
+    banner.setAttribute("heading", done ? "Your store data is ready" : "Getting your store data ready");
+    banner.setAttribute("tone", done ? "success" : "info");
     banner.textContent = done
-      ? "Look through the features below, or start onboarding to activate Findter on your theme."
-      : "Up-to-date data are being collected. Please wait until this process is complete before continuing with the app.";
-    if (done) continueRow.removeAttribute("hidden");
-    else continueRow.setAttribute("hidden", "");
+      ? "Findter is ready to set up on your theme. Explore the features below or continue to get started."
+      : "We\u2019re syncing your products in the background. Feel free to explore Findter in the meantime \u2013 we\u2019ll let you know when it\u2019s done.";
+    continueRow.removeAttribute("hidden");
   }
 
   function imageHtml(url, name) {
@@ -251,7 +271,7 @@
     if (!thumb && !media) {
       frameHtml =
         '<div class="' + wrapClass + ' fdt-hf__media--empty" role="img" aria-label="' + esc(feature.name) + ' preview">' +
-        '<span class="fdt-hf__media-label">There is no preview for this feature yet</span>' +
+        '<span class="fdt-hf__media-label">' + EMPTY_PREVIEW + '</span>' +
         "</div>";
     } else {
       var open =
@@ -421,6 +441,7 @@
         }
       },
       refresh: function () { render("refresh"); },
+      current: current,
       restore: goToCode,
       pauseForModal: function () { modalOpen = true; stopTimer(); },
       resumeFromModal: function () { modalOpen = false; armTimer(); },
@@ -440,7 +461,7 @@
 
   function stageEmpty() {
     mediaStage.innerHTML =
-      '<div class="fdt-hf__media--empty" style="height:100%"><span class="fdt-hf__media-label">There is no preview for this feature yet</span></div>';
+      '<div class="fdt-hf__media--empty" style="height:100%"><span class="fdt-hf__media-label">' + EMPTY_PREVIEW + '</span></div>';
   }
 
   // Media URL → play it once (muted, no loop, last frame stays). Thumbnail only → still image (BR-30, BR-31).
@@ -514,14 +535,16 @@
     place();
   }
 
-  function showHighlight(reset) {
+  function showHighlight(reset, keepIndex) {
     mode = "highlight";
     root.hidden = false;
     page.hidden = false;
     advanced.hidden = true;
     closeMedia();
     // Default: restart indexing whenever the highlight screen opens.
-    resetIndex();
+    // Reopening from Help keeps the current index state.
+    if (keepIndex) renderBanner();
+    else resetIndex();
     pageWidget.show(reset);
     place();
   }
@@ -531,6 +554,38 @@
     root.hidden = true;
     if (pageWidget) pageWidget.stop();
     mountHomeCard();
+    wireHelpLink();
+  }
+
+  // Help & Support → "View feature highlights" reopens the welcome page; the dismissed card stays hidden.
+  function wireHelpLink() {
+    var doc = frame && frame.contentDocument;
+    if (!doc || doc.documentElement.hasAttribute("data-fdt-hf-help")) return;
+    doc.documentElement.setAttribute("data-fdt-hf-help", "");
+    doc.addEventListener("click", function (event) {
+      var link = event.target.closest && event.target.closest("#fdt-hf-reopen");
+      if (!link) return;
+      event.preventDefault();
+      sessionStorage.removeItem(SESSION_HIDE);
+      showHighlight(true, true);
+    });
+  }
+
+  function dismissHomeCard() {
+    var slide = homeWidget ? homeWidget.current() : null;
+    localStorage.setItem(KEY.cardDismissed, "true");
+    track("highlight_card_dismissed", Object.assign({ source: "homepage", shop_domain: SHOP }, slide ? idsFor(slide) : {}));
+    if (homeWidget) homeWidget.stop();
+    homeWidget = null;
+    removeHomeCard();
+  }
+
+  function removeHomeCard() {
+    var doc = frame && frame.contentDocument;
+    var card = doc && doc.getElementById("fdt-hf-home");
+    if (!card) return;
+    var wrap = card.closest(".Polaris-Layout__Section");
+    (wrap || card).remove();
   }
 
   function showAdvancedFromBack() {
@@ -560,6 +615,10 @@
   function mountHomeCard() {
     if (!frame || !frame.contentDocument) return;
     var doc = frame.contentDocument;
+    if (flag(KEY.cardDismissed)) {
+      removeHomeCard();
+      return;
+    }
     ensureHomeStyles(doc);
     var existing = doc.getElementById("fdt-hf-home");
     if (existing) {
@@ -584,9 +643,15 @@
     wrap.className = "Polaris-Layout__Section";
     var card = doc.createElement("s-section");
     card.id = "fdt-hf-home";
-    card.setAttribute("heading", "Highlight features");
     card.innerHTML =
       '<s-stack gap="base">' +
+      '<s-stack direction="inline" justifyContent="space-between" alignItems="start" gap="base">' +
+      '<s-stack gap="small-200">' +
+      "<s-heading>What you can do with Findter</s-heading>" +
+      '<s-paragraph color="subdued">Pick a topic to see how each feature works.</s-paragraph>' +
+      "</s-stack>" +
+      '<s-button type="button" id="fdt-hf-home-dismiss" variant="tertiary" icon="x" accessibilityLabel="Dismiss"></s-button>' +
+      "</s-stack>" +
       '<s-stack id="fdt-hf-home-tabs" direction="inline" gap="small" alignItems="center" role="tablist" aria-label="Feature groups"></s-stack>' +
       '<div id="fdt-hf-home-body"></div>' +
       "</s-stack>";
@@ -598,6 +663,7 @@
       alwaysView: false
     });
     homeWidget.show(true);
+    doc.getElementById("fdt-hf-home-dismiss").addEventListener("click", dismissHomeCard);
   }
 
   function present(resetHighlight) {
@@ -642,12 +708,12 @@
     alwaysView: true
   });
 
+  // Continue is available from the first render; indexing state is only reported.
   document.getElementById("fdt-hf-home").addEventListener("click", function () {
-    if (!indexed()) return;
     localStorage.setItem(KEY.continueClicked, "true");
     track("highlight_continue_clicked", {
       source: "highlight_page",
-      indexing_status: "completed",
+      indexing_status: indexingStatus(),
       shop_domain: SHOP
     });
     showHome();
@@ -678,7 +744,10 @@
       showHighlight(true);
     }).observe(welcome, { attributes: true, attributeFilter: ["hidden"] });
   }
-  if (frame) frame.addEventListener("load", function () { if (mode === "home") mountHomeCard(); });
+  if (frame) frame.addEventListener("load", function () {
+    wireHelpLink();
+    if (mode === "home") mountHomeCard();
+  });
 
   function startIndexTimer() {
     if (indexTimer) clearTimeout(indexTimer);
